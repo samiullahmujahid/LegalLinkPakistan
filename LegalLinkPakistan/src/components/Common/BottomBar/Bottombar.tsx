@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from './Bottombar.styles';
 
 interface BottomNavProps {
@@ -12,9 +13,16 @@ interface BottomNavProps {
 const Bottombar: React.FC<BottomNavProps> = ({ navigation, currentRoute, role }) => {
   const activeColor = '#ffcc00'; 
   const inactiveColor = '#fff';   
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.bottomNav}>
+    <View style={[
+      styles.bottomNav,
+      {
+        paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+        paddingTop: 10,
+      }
+    ]}>
       {/* 1. HOME TAB */}
       <TouchableOpacity 
         style={styles.navItem} 

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, Image, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, SafeAreaView 
+  View, Text, Image, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator 
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // Styles Import (Rasta sahi check kar lijiye ga)
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
+import Header from '../../components/Common/Header';
 
 const LawyerDetailVerify = ({ route, navigation }: any) => {
   const { lawyerId } = route.params;
@@ -58,13 +59,11 @@ const LawyerDetailVerify = ({ route, navigation }: any) => {
   if (loading) return <ActivityIndicator size="large" color="#001a4d" style={{ flex: 1 }} />;
 
   return (
-    <SafeAreaView style={s.container}>
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={30} color="#fff" />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Lawyer Documents</Text>
-      </View>
+    <View style={s.container}>
+      <Header 
+        title="Lawyer Documents" 
+        showBackButton={true} 
+      />
 
       <ScrollView contentContainerStyle={s.scrollContent}>
         <View style={s.infoCard}>
@@ -122,7 +121,7 @@ const LawyerDetailVerify = ({ route, navigation }: any) => {
         
         {actionLoading && <ActivityIndicator color="#001a4d" style={{marginTop: 10}} />}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -1,11 +1,12 @@
 import React, { useState, useCallback } from 'react';
 import { 
-  View, Text, SafeAreaView, TouchableOpacity, Image, ActivityIndicator 
+  View, Text, TouchableOpacity, Image, ActivityIndicator 
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LawyerStyles as ls } from '../../theme/styles/LawyerStyles';
+import Header from '../../components/Common/Header';
 
 const LawyerStatus = ({ navigation, route }: any) => {
   const [status, setStatus] = useState('Pending Approval');
@@ -35,11 +36,12 @@ const LawyerStatus = ({ navigation, route }: any) => {
   );
 
   return (
-    <SafeAreaView style={ls.container}>
-      {/* Top Back Button */}
-      <TouchableOpacity style={ls.backBtn} onPress={() => navigation.goBack()}>
-        <Text style={ls.backText}>Back</Text>
-      </TouchableOpacity>
+    <View style={ls.container}>
+      {/* Header */}
+      <Header 
+        title="Verification Status" 
+        showBackButton={true} 
+      />
 
       <View style={[ls.scrollContent, { paddingTop: 40, paddingHorizontal: 20 }]}>
         
@@ -84,7 +86,7 @@ const LawyerStatus = ({ navigation, route }: any) => {
         </View>
 
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

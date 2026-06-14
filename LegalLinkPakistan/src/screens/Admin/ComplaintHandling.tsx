@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, SafeAreaView, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ComplaintCard from '../../components/Common/ComplaintCard/ComplaintCard';
+import Header from '../../components/Common/Header';
 
 const ComplaintHandling = ({ navigation }: any) => {
     const [activeTab, setActiveTab] = useState('Client'); // 'Client' or 'Lawyer'
@@ -43,13 +44,11 @@ const ComplaintHandling = ({ navigation }: any) => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Icon name="arrow-left" size={28} color="#fff" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>Complaint Handling</Text>
-            </View>
+        <View style={styles.container}>
+            <Header 
+                title="Complaint Handling" 
+                showBackButton={true} 
+            />
 
             <View style={styles.tabContainer}>
                 {['Client', 'Lawyer'].map((tab) => (
@@ -83,14 +82,12 @@ const ComplaintHandling = ({ navigation }: any) => {
                     }
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f9f9f9' },
-    header: { backgroundColor: '#001a4d', padding: 20, flexDirection: 'row', alignItems: 'center' },
-    headerTitle: { color: '#fff', fontSize: 20, fontWeight: 'bold', marginLeft: 15 },
     tabContainer: { flexDirection: 'row', justifyContent: 'space-around', backgroundColor: '#fff', paddingVertical: 15, elevation: 2 },
     tabButton: { alignItems: 'center', paddingHorizontal: 20 },
     tabText: { fontSize: 16, color: '#888' },

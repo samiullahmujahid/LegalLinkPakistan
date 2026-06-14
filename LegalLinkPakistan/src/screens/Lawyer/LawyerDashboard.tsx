@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, SafeAreaView, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { LawyerStyles as s } from '../../theme/styles/LawyerStyles';
 import Card from '../../components/Common/Card/Card';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
 import NotificationIcon from '../../components/Common/NotificationIcon';
+import Header from '../../components/Common/Header';
 
 interface LawyerMenuItem {
   title: string;
@@ -44,18 +45,21 @@ const LawyerDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={s.container}>
+    <View style={s.container}>
       {/* Header Section */}
-      <View style={[s.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-        <Text style={s.headerText}>Legal Link Pakistan</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {/* ✅ Wallet Icon Shortcut */}
-          <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={{ marginRight: 15 }}>
-            <Icon name="wallet-outline" size={28} color="#fff" />
-          </TouchableOpacity>
-          <NotificationIcon />
-        </View>
-      </View>
+      <Header 
+        title="Legal Link Pakistan" 
+        showBackButton={false} 
+        rightElement={
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            {/* Wallet Icon Shortcut */}
+            <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={{ marginRight: 15 }}>
+              <Icon name="wallet-outline" size={28} color="#fff" />
+            </TouchableOpacity>
+            <NotificationIcon />
+          </View>
+        } 
+      />
 
       {/* Main Content Section */}
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -71,7 +75,7 @@ const LawyerDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       {/* Common Bottom Bar Section */}
       <CustomBottomNav navigation={navigation} currentRoute="Home" role="Lawyer" />
-    </SafeAreaView>
+    </View>
   );
 };
 

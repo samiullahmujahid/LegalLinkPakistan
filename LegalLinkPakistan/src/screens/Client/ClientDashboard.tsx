@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, ScrollView, Alert } from 'react-native';
 import NotificationIcon from '../../components/Common/NotificationIcon';
+import Header from '../../components/Common/Header';
 import { LawyerStyles as s } from '../../theme/styles/LawyerStyles';
 import Card from '../../components/Common/Card/Card';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
@@ -44,12 +45,13 @@ const ClientDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={s.container}>
+    <View style={s.container}>
       {/* Header Section */}
-      <View style={[s.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
-        <Text style={s.headerText}>Legal Link Pakistan</Text>
-        <NotificationIcon />
-      </View>
+      <Header 
+        title="Legal Link Pakistan" 
+        showBackButton={false} 
+        rightElement={<NotificationIcon />} 
+      />
 
       {/* Main Content Section */}
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -65,7 +67,7 @@ const ClientDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
 
       {/* Common Bottom Bar Section */}
       <CustomBottomNav navigation={navigation} currentRoute="Home" role="Client" />
-    </SafeAreaView>
+    </View>
   );
 };
 

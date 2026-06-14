@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, SafeAreaView, TouchableOpacity, ScrollView, ActivityIndicator 
+  View, Text, TouchableOpacity, ScrollView, ActivityIndicator 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
@@ -9,6 +9,7 @@ import { AdminStyles as s } from '../../theme/styles/AdminStyles';
 import Card from '../../components/Common/Card/Card';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
 import NotificationIcon from '../../components/Common/NotificationIcon';
+import Header from '../../components/Common/Header';
 
 const AdminDashboard = ({ navigation }: any) => {
   const [stats, setStats] = useState({ totalLawyers: 0, totalClients: 0 });
@@ -42,12 +43,13 @@ const AdminDashboard = ({ navigation }: any) => {
   }, []);
 
   return (
-    <SafeAreaView style={s.container}>
+    <View style={s.container}>
       {/* Header Section */}
-      <View style={s.header}>
-        <Text style={s.headerTitle}>Legal Link Pakistan</Text>
-        <NotificationIcon badgeBorderColor="#001a4d" />
-      </View>
+      <Header 
+        title="Legal Link Pakistan" 
+        showBackButton={false} 
+        rightElement={<NotificationIcon badgeBorderColor="#001a4d" />} 
+      />
 
       {/* Main Content Section */}
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -91,7 +93,7 @@ const AdminDashboard = ({ navigation }: any) => {
 
       {/* Common Bottom Bar Section */}
       <CustomBottomNav navigation={navigation} currentRoute="Home" role="Admin" />
-    </SafeAreaView>
+    </View>
   );
 };
 

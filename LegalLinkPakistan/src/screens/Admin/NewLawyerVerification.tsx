@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // 👈 AD
 
 // --- Modular Import ---
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
+import Header from '../../components/Common/Header';
 
 const NewLawyerVerification = ({ navigation }: any) => {
   const [lawyers, setLawyers] = useState([]);
@@ -87,12 +88,10 @@ const NewLawyerVerification = ({ navigation }: any) => {
   return (
     <View style={s.container}>
       {/* Header */}
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={s.backBtnHeader}>
-          <Icon name="arrow-left" size={28} color="#fff" />
-        </TouchableOpacity>
-        <Text style={s.headerTitle}>Verification Requests</Text>
-      </View>
+      <Header 
+        title="Verification Requests" 
+        showBackButton={true} 
+      />
 
       {/* Search Bar */}
       <View style={s.searchSection}>

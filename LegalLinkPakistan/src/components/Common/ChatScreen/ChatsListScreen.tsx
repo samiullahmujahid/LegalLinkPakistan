@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, SafeAreaView, StatusBar, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, StatusBar, TextInput } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import BottomBar from '../BottomBar/Bottombar'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Header from '../Header';
 
 const ChatsListScreen = ({ navigation }: any) => {
   const [chats, setChats] = useState([]);
@@ -80,9 +81,10 @@ const ChatsListScreen = ({ navigation }: any) => {
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar backgroundColor="#001a4d" barStyle="light-content" />
       
-      <View style={styles.headerArea}>
-        <Text style={styles.headerTitle}>Chats</Text>
-      </View>
+      <Header 
+        title="Chats" 
+        showBackButton={false} 
+      />
 
       {/* WhatsApp Search Bar */}
       <View style={styles.searchContainer}>
@@ -98,7 +100,7 @@ const ChatsListScreen = ({ navigation }: any) => {
         </View>
       </View>
 
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <FlatList
           data={filteredChats}
           keyExtractor={(item: any) => item._id}
@@ -174,26 +176,13 @@ const ChatsListScreen = ({ navigation }: any) => {
           }}
           ListEmptyComponent={<Text style={styles.empty}>No active chats found.</Text>}
         />
-      </SafeAreaView>
+      </View>
       <BottomBar navigation={navigation} currentRoute="Chats" role={currentUser?.role || 'Client'} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  headerArea: { 
-    backgroundColor: '#001a4d', 
-    paddingTop: 45, 
-    paddingBottom: 15, 
-    paddingHorizontal: 20, 
-    width: '100%', 
-    justifyContent: 'center' 
-  },
-  headerTitle: { 
-    fontSize: 22, 
-    fontWeight: '700', 
-    color: '#fff' 
-  },
   searchContainer: {
     paddingHorizontal: 16,
     paddingVertical: 10,
