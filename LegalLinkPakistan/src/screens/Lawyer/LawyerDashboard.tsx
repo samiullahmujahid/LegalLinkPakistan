@@ -1,0 +1,78 @@
+import React from 'react';
+import { View, Text, SafeAreaView, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { LawyerStyles as s } from '../../theme/styles/LawyerStyles';
+import Card from '../../components/Common/Card/Card';
+import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
+import NotificationIcon from '../../components/Common/NotificationIcon';
+
+interface LawyerMenuItem {
+  title: string;
+  icon: string;
+  screen: string;
+}
+
+const LawyerDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
+
+  const menuItems: LawyerMenuItem[] = [
+    { title: 'Clients Requests', icon: 'file-document-outline', screen: 'ClientRequests' },
+    { title: 'Appointment Tracking', icon: 'file-find-outline', screen: 'TrackAppointment' },
+    { title: 'Tracking Complaint', icon: 'account-alert-outline', screen: 'ComplaintStatus' },
+    { title: 'Find Lawyers', icon: 'text-search', screen: 'FindLawyers' },
+  ];
+
+  const handleNavigation = (screenName: string) => {
+    try {
+      if (screenName === 'ClientRequests') {
+        navigation.navigate(screenName);
+      } 
+      else if (screenName === 'TrackAppointment') {
+        navigation.navigate('TrackAppointment', { role: 'lawyer' });
+      }
+      else if (screenName === 'ComplaintStatus') {
+        navigation.navigate('ComplaintStatus');
+      }
+      else {
+        Alert.alert(
+          'Under Development 🛠️', 
+          `The ${screenName} interface workflow integration is currently baking.`
+        );
+      }
+    } catch (error) {
+      console.error(`Navigation dispatch to ${screenName} failed:`, error);
+    }
+  };
+
+  return (
+    <SafeAreaView style={s.container}>
+      {/* Header Section */}
+      <View style={[s.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+        <Text style={s.headerText}>Legal Link Pakistan</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {/* ✅ Wallet Icon Shortcut */}
+          <TouchableOpacity onPress={() => navigation.navigate('Wallet')} style={{ marginRight: 15 }}>
+            <Icon name="wallet-outline" size={28} color="#fff" />
+          </TouchableOpacity>
+          <NotificationIcon />
+        </View>
+      </View>
+
+      {/* Main Content Section */}
+      <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+        {menuItems.map((item, index) => (
+          <Card 
+            key={index}
+            title={item.title}
+            iconName={item.icon}
+            onPress={() => handleNavigation(item.screen)}
+          />
+        ))}
+      </ScrollView>
+
+      {/* Common Bottom Bar Section */}
+      <CustomBottomNav navigation={navigation} currentRoute="Home" role="Lawyer" />
+    </SafeAreaView>
+  );
+};
+
+export default LawyerDashboard;

@@ -1,0 +1,118 @@
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  SafeAreaView, 
+  ScrollView, 
+  TextInput, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  Alert 
+} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { LawyerStyles as s } from '../../../theme/styles/LawyerStyles';
+import Header from '../../../components/Common/Header';
+import { COLORS } from '../../../theme/theme';
+
+const BASE_URL = 'https://mug-work-public.ngrok-free.dev';
+
+export default function RequestDetails({ navigation, route }: { navigation: any; route: any }) {
+  const { bookingId, requestData } = route.params || {};
+
+  const [date, setDate] = useState<string>('14/02/2026'); 
+  const [time, setTime] = useState<string>('2:00 pm');
+  const [paymentLimit, setPaymentLimit] = useState<string>('30'); // Default to 30 minutes
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+
+  const clientName = requestData?.client?.name || "Client";
+  const caseCategory = requestData?.caseCategory || "General";
+  const caseSubject = requestData?.caseSubject || "######";
+  const caseDescription = requestData?.caseDescription || "No description provided.";
+
+  const handleStatusUpdate = async (status: 'accepted' | 'rejected') => {
+    try {
+      setActionLoading(true);
+      const token = await AsyncStorage.getItem('userToken');
+      
+      const payload: any = { status };
+      if (status === 'accepted') {
+        payload.scheduledDate = date;
+        payload.scheduledTime = time;
+        payload.paymentLimitMinutes = parseInt(paymentLimit) || 30;
+      }
+
+      const response = await fetch(`${BASE_URL}/api/bookings/lawyer/update-status/${bookingId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token?.trim().replace(/^["']|["']$/g, '')}`,
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const resData = await response.json();
+
+      if (resData.success) {
+        Alert.alert("Success", `Request ${status} successfully!`);
+        navigation.goBack();
+      } else {
+        Alert.alert("Error", resData.message || "Failed to update status");
+      }
+    } catch (error: any) {
+      console.error("Network Error:", error.message);
+      Alert.alert("Network Error", "Check your internet connection.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  return (
+    <SafeAreaView style={[s.container, { backgroundColor: COLORS.white }]}>
+      <Header title="Request Details" />
+
+      <ScrollView contentContainerStyle={{ padding: 20 }}>
+        <View style={{ backgroundColor: COLORS.primary, borderRadius: 12, padding: 20, marginBottom: 20 }}>
+          <Text style={{ color: '#ffcc00', fontWeight: '700' }}>CLIENT NAME</Text>
+          <Text style={{ fontSize: 20, color: '#fff', fontWeight: 'bold' }}>{clientName}</Text>
+          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.2)', marginVertical: 15 }} />
+          <Text style={{ color: '#ccc' }}>CATEGORY: {caseCategory}</Text>
+          <Text style={{ color: '#fff', marginTop: 10 }}>SUBJECT: {caseSubject}</Text>
+          <Text style={{ color: '#e2e8f0', marginTop: 10, textAlign: 'justify' }}>{caseDescription}</Text>
+        </View>
+
+        <View style={{ backgroundColor: COLORS.lightBg, borderRadius: 12, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: COLORS.lightGray }}>
+          <Text style={{ fontWeight: 'bold', marginBottom: 10, color: COLORS.primary }}>🗓️ Set Schedule & Details</Text>
+          
+          <Text style={{ fontSize: 12, color: COLORS.gray, marginBottom: 5, fontWeight: '600' }}>Date (e.g. 14/02/2026):</Text>
+          <TextInput value={date} onChangeText={setDate} style={{ backgroundColor: COLORS.lightGray, padding: 10, borderRadius: 8, marginBottom: 10, color: COLORS.text }} />
+          
+          <Text style={{ fontSize: 12, color: COLORS.gray, marginBottom: 5, fontWeight: '600' }}>Time (e.g. 2:00 PM):</Text>
+          <TextInput value={time} onChangeText={setTime} style={{ backgroundColor: COLORS.lightGray, padding: 10, borderRadius: 8, marginBottom: 10, color: COLORS.text }} />
+
+          <Text style={{ fontSize: 12, color: COLORS.gray, marginBottom: 5, fontWeight: '600' }}>Payment Due Limit (Minutes):</Text>
+          <TextInput 
+            value={paymentLimit} 
+            onChangeText={setPaymentLimit} 
+            keyboardType="numeric" 
+            placeholder="e.g. 30" 
+            style={{ backgroundColor: COLORS.lightGray, padding: 10, borderRadius: 8, color: COLORS.text }} 
+          />
+        </View>
+
+        {actionLoading ? (
+          <ActivityIndicator size="large" color={COLORS.primary} />
+        ) : (
+          <View style={{ gap: 12 }}>
+            <TouchableOpacity onPress={() => handleStatusUpdate('accepted')} style={{ backgroundColor: COLORS.success, padding: 15, borderRadius: 25, alignItems: 'center' }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Accept & Schedule</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleStatusUpdate('rejected')} style={{ backgroundColor: COLORS.danger, padding: 15, borderRadius: 25, alignItems: 'center' }}>
+              <Text style={{ color: '#fff', fontWeight: 'bold' }}>Reject Request</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
