@@ -226,16 +226,16 @@ const ChatScreen = ({ route, navigation }: any) => {
       } as any);
       formData.append('bookingId', bookingId);
 
-      const response = await fetch('https://mug-work-public.ngrok-free.dev/api/chat/upload-file', {
-        method: 'POST',
-        body: formData,
+      console.log("📡 Uploading document via Axios...");
+      const response = await axios.post('https://mug-work-public.ngrok-free.dev/api/chat/upload-file', formData, {
         headers: {
-          Authorization: `Bearer ${cleanToken}`,
+          'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${cleanToken}`,
           'ngrok-skip-browser-warning': 'true',
         },
       });
 
-      const uploadResData = await response.json();
+      const uploadResData = response.data;
 
       if (uploadResData.success) {
         socket.emit('sendMessage', {
@@ -248,8 +248,8 @@ const ChatScreen = ({ route, navigation }: any) => {
       } else {
         Alert.alert("Upload Error", uploadResData.message || "Failed to upload document.");
       }
-    } catch (error) {
-      console.log("File Upload Error:", error);
+    } catch (error: any) {
+      console.log("File Upload Error:", error?.response?.data || error);
       Alert.alert("Upload Error", "Failed to upload document.");
     }
   };
@@ -259,28 +259,35 @@ const ChatScreen = ({ route, navigation }: any) => {
       const audioFile = await AudioRecord.stop();
       setIsRecording(false);
 
+      if (!audioFile) {
+        console.log("Audio recording file path is empty");
+        return;
+      }
+
       try {
         const token = await AsyncStorage.getItem('userToken');
         const cleanToken = token?.replace(/['"]+/g, '');
 
+        const audioUri = audioFile.startsWith('file://') ? audioFile : `file://${audioFile}`;
+
         const formData = new FormData();
         formData.append('file', {
-          uri: Platform.OS === 'android' ? `file://${audioFile}` : audioFile,
+          uri: audioUri,
           type: 'audio/wav',
           name: `voice_${Date.now()}.wav`,
         } as any);
         formData.append('bookingId', bookingId);
 
-        const response = await fetch('https://mug-work-public.ngrok-free.dev/api/upload/audio', {
-          method: 'POST',
-          body: formData,
+        console.log("📡 Uploading voice note via Axios...");
+        const response = await axios.post('https://mug-work-public.ngrok-free.dev/api/upload/audio', formData, {
           headers: {
-            Authorization: `Bearer ${cleanToken}`,
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${cleanToken}`,
             'ngrok-skip-browser-warning': 'true',
           },
         });
 
-        const uploadResData = await response.json();
+        const uploadResData = response.data;
 
         if (uploadResData.success) {
           socket.emit('sendMessage', {
@@ -292,8 +299,9 @@ const ChatScreen = ({ route, navigation }: any) => {
         } else {
           Alert.alert("Audio Upload Error", uploadResData.message || "Failed to upload audio.");
         }
-      } catch (error) {
-        console.log("Audio Upload Error:", error);
+      } catch (error: any) {
+        console.log("Audio Upload Error:", error?.response?.data || error);
+        Alert.alert("Audio Upload Error", "Failed to upload audio.");
       }
     } else {
       const audioGranted = await PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.RECORD_AUDIO);
