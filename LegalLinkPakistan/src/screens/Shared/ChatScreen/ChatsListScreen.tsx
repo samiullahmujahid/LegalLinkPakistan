@@ -3,9 +3,9 @@ import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, 
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import BottomBar from '../BottomBar/Bottombar'; 
+import BottomBar from '../../../components/Common/BottomBar/Bottombar'; 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Header from '../Header';
+import Header from '../../../components/Common/Header';
 
 const ChatsListScreen = ({ navigation }: any) => {
   const [chats, setChats] = useState([]);

@@ -55,6 +55,16 @@ export const globalStyles = StyleSheet.create({
   linkText: { 
     color: COLORS.primary, 
     fontWeight: 'bold', 
-    fontSize: 14 
+    fontSize: 14,
+    textDecorationLine: 'underline'
   },
+  form: {
+    width: '100%'
+  },
+  subTitle: {
+    fontSize: 18,
+    color: COLORS.primary,
+    marginBottom: 30,
+    textAlign: 'center'
+  }
 });

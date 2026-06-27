@@ -4,6 +4,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CommonActions } from '@react-navigation/native';
+import Header from '../../../components/Common/Header';
+import { MyButton } from '../../../components/Common/MyButton';
 
 const ComplaintDetails = ({ route, navigation }: any) => {
   const { id } = route.params;
@@ -120,12 +122,7 @@ const ComplaintDetails = ({ route, navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-          <Icon name="arrow-left" size={28} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Details</Text>
-      </View>
+      <Header title="Details" />
 
       <ScrollView contentContainerStyle={styles.content}>
         
@@ -218,20 +215,21 @@ const ComplaintDetails = ({ route, navigation }: any) => {
               value={adminComment} 
               onChangeText={setAdminComment} 
             />
-            <TouchableOpacity style={[styles.actionBtn, styles.warnBtn]} onPress={() => handleAction('warned')}>
-              <Icon name="alert-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.btnText}>Issue Warning</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.actionBtn, styles.suspendBtn]} onPress={promptSuspension}>
-              <Icon name="account-cancel-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.btnText}>Suspend Account</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={[styles.actionBtn, styles.resolveBtn]} onPress={() => handleAction('resolved')}>
-              <Icon name="check-all" size={18} color="#fff" style={{ marginRight: 6 }} />
-              <Text style={styles.btnText}>Mark As Resolved</Text>
-            </TouchableOpacity>
+            <MyButton 
+              title="Issue Warning"
+              onPress={() => handleAction('warned')}
+              style={{ backgroundColor: '#f59e0b', height: 45, borderRadius: 8, marginTop: 12 }}
+            />
+            <MyButton 
+              title="Suspend Account"
+              onPress={promptSuspension}
+              style={{ backgroundColor: '#ef4444', height: 45, borderRadius: 8, marginTop: 12 }}
+            />
+            <MyButton 
+              title="Mark As Resolved"
+              onPress={() => handleAction('resolved')}
+              style={{ backgroundColor: '#10b981', height: 45, borderRadius: 8, marginTop: 12 }}
+            />
           </View>
         )}
       </ScrollView>
@@ -241,23 +239,6 @@ const ComplaintDetails = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
-  header: { 
-    backgroundColor: '#001a4d', 
-    paddingTop: Platform.OS === 'ios' ? 10 : 20, 
-    paddingBottom: 20,
-    paddingHorizontal: 20, 
-    flexDirection: 'row', 
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  backBtn: {
-    padding: 4,
-  },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700', marginLeft: 15 },
   content: { padding: 20 },
   
   // Stepper Tracker styles

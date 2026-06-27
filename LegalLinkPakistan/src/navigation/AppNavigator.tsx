@@ -11,18 +11,17 @@ import LoginScreen from '../screens/Shared/LoginScreen';
 import RegistrationSuccess from '../screens/Shared/RegistrationSuccess';
 
 // ================= AI =================
-import AiChatbotScreen from '../components/Common/AiChatbotScreen';
+import AiChatbotScreen from '../screens/Shared/AiChatbotScreen';
 
 // ================= ADMIN =================
-import AdminLoginScreen from '../screens/Admin/AdminLoginScreen';
 import AdminVerify from '../screens/Admin/AdminVerify';
 import AdminDashboard from '../screens/Admin/AdminDashboard';
 import NewLawyerVerification from '../screens/Admin/NewLawyerVerification';
 import ComplaintHandling from '../screens/Admin/ComplaintHandling'; 
-import ComplaintDetails from '../components/Common/ComplaintScreen/ComplaintDetails'; // Added
+import ComplaintDetails from '../screens/Shared/ComplaintScreen/ComplaintDetails'; // Added
 
 // ================= CLIENT =================
-import ClientSignup from '../screens/Client/ClientSignup';
+import ClientSignup from '../screens/Client/Registration/ClientSignup';
 import ClientDashboard from '../screens/Client/ClientDashboard';
 
 // ================= LAWYER =================
@@ -31,14 +30,12 @@ import CaseDetails from '../screens/Client/Booking/CaseDetails';
 import AppointmentSummary from '../screens/Client/Booking/AppointmentSummary';
 import Payment from '../screens/Client/Booking/Payment';
 
-import AppointmentStatus from '../components/Common/TrackAppointment/AppointmentStatus';
-import TrackAppointment from '../components/Common/TrackAppointment/TrackAppointment';
-import ComplaintStatus from '../components/Common/ComplaintScreen/ComplaintStatus'; // Added
+import AppointmentStatus from '../screens/Shared/TrackAppointment/AppointmentStatus';
+import TrackAppointment from '../screens/Shared/TrackAppointment/TrackAppointment';
+import ComplaintStatus from '../screens/Shared/ComplaintScreen/ComplaintStatus'; // Added
 
 // ================= LAWYER ONBOARD =================
-import LawyerSignup from '../screens/Lawyer/LawyerSignup';
-import LawyerSignUp2 from '../screens/Lawyer/LawyerSignUp2';
-import LawyerSignUp3 from '../screens/Lawyer/LawyerSignUp3';
+import LawyerSignup from '../screens/Lawyer/Registration/LawyerSignup';
 
 import LawyerStatus from '../screens/Lawyer/LawyerStatus';
 import LawyerDetailVerify from '../screens/Lawyer/LawyerDetailVerify';
@@ -50,11 +47,11 @@ import RequestDetails from '../screens/Lawyer/AppointmentManagement/RequestDetai
 import Wallet from '../screens/Lawyer/Wallet/Wallet';
 
 // ================= CHAT & COMPLAINTS =================
-import ChatScreen from '../components/Common/ChatScreen/ChatScreen';
-import ChatsListScreen from '../components/Common/ChatScreen/ChatsListScreen';
-import CallScreen from '../components/Common/ChatScreen/CallScreen';
-import ChatInfo from '../components/Common/ChatScreen/ChatInfo';
-import ComplaintScreen from '../components/Common/ComplaintScreen/ComplaintScreen';
+import ChatScreen from '../screens/Shared/ChatScreen/ChatScreen';
+import ChatsListScreen from '../screens/Shared/ChatScreen/ChatsListScreen';
+import CallScreen from '../screens/Shared/ChatScreen/CallScreen';
+import ChatInfo from '../screens/Shared/ChatScreen/ChatInfo';
+import ComplaintScreen from '../screens/Shared/ComplaintScreen/ComplaintScreen';
 import { NotificationProvider } from '../components/Common/NotificationProvider';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import ProfileScreen from '../screens/Shared/ProfileScreen';
@@ -63,10 +60,9 @@ import RecommendedLawyersScreen from '../screens/Client/Booking/RecommendedLawye
 // ================= TYPES =================
 export type RootStackParamList = {
   RoleSelection: undefined;
-  Login: { role: 'Client' | 'Lawyer' };
+  Login: { role: 'Client' | 'Lawyer' | 'Admin' };
   RegistrationSuccess: undefined;
 
-  AdminLogin: undefined;
   AdminVerify: { email: string };
   AdminDashboard: undefined;
   NewLawyerVerification: undefined;
@@ -86,8 +82,6 @@ export type RootStackParamList = {
   ComplaintStatus: undefined; // Added
 
   LawyerSignup: undefined;
-  LawyerSignUp2: undefined;
-  LawyerSignUp3: undefined;
 
 
   LawyerStatus: { status: string; reason?: string };
@@ -135,7 +129,6 @@ const AppNavigator = () => {
         <Stack.Screen name="RegistrationSuccess" component={RegistrationSuccess} />
 
         {/* ADMIN */}
-        <Stack.Screen name="AdminLogin" component={AdminLoginScreen} />
         <Stack.Screen name="AdminVerify" component={AdminVerify} />
         <Stack.Screen name="AdminDashboard" component={AdminDashboard} />
         <Stack.Screen name="NewLawyerVerification" component={NewLawyerVerification} />
@@ -148,8 +141,6 @@ const AppNavigator = () => {
 
         {/* LAWYER */}
         <Stack.Screen name="LawyerSignup" component={LawyerSignup} />
-        <Stack.Screen name="LawyerSignUp2" component={LawyerSignUp2} />
-        <Stack.Screen name="LawyerSignUp3" component={LawyerSignUp3} />
 
 
         <Stack.Screen name="LawyerStatus" component={LawyerStatus} />

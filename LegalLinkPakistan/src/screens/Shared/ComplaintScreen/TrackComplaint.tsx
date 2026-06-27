@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import Header from '../../../components/Common/Header';
 
 const TrackComplaint = ({ navigation, route }: any) => {
   // Assume status comes from navigation params
@@ -10,10 +10,7 @@ const TrackComplaint = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Icon name="arrow-left" size={28} color="#fff" /></TouchableOpacity>
-        <Text style={styles.headerTitle}>Track Complaint</Text>
-      </View>
+      <Header title="Track Complaint" />
 
       <View style={styles.trackContainer}>
         {['PENDING', 'IN-PROGRESS', 'RESOLVED'].map((step, index) => (
@@ -35,8 +32,6 @@ const TrackComplaint = ({ navigation, route }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: { backgroundColor: '#001a4d', padding: 20, flexDirection: 'row', alignItems: 'center' },
-  headerTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginLeft: 15 },
   trackContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 50, paddingHorizontal: 20 },
   step: { alignItems: 'center', flex: 1 },
   circle: { width: 20, height: 20, borderRadius: 10 },

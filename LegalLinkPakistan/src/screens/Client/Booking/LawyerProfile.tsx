@@ -3,10 +3,12 @@ import {
   View, Text, SafeAreaView, ScrollView, ActivityIndicator, TouchableOpacity, Image 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Header from '../../../components/Common/Header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ClientStyles as styles } from '../../../theme/styles/ClientStyles';
 import Bottombar from '../../../components/Common/BottomBar/Bottombar';
+import { MyButton } from '../../../components/Common/MyButton';
 
 const LawyerProfile = ({ route, navigation }: any) => {
   const { lawyerId, viewOnly } = route.params || {};
@@ -137,13 +139,7 @@ const LawyerProfile = ({ route, navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.bookingHeader}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={28} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.bookingHeaderTitle}>Lawyer Profile Portfolio</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <Header title="Lawyer Profile Portfolio" />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
         <View style={styles.profileHeaderContainer}>
@@ -211,13 +207,11 @@ const LawyerProfile = ({ route, navigation }: any) => {
 
       {!viewOnly && (
         <View style={styles.footerButtonContainer}>
-          <TouchableOpacity 
-            style={styles.primaryActionButton}
+          <MyButton 
+            title="Proceed to Case Details"
             onPress={() => navigation.navigate('CaseDetails', { lawyerId: lawyer?._id, lawyerName: lawyer?.name })}
-          >
-            <Text style={styles.primaryActionText}>Proceed to Case Details</Text>
-            <Icon name="arrow-right" size={20} color="#fff" />
-          </TouchableOpacity>
+            style={styles.primaryActionButton}
+          />
         </View>
       )}
 

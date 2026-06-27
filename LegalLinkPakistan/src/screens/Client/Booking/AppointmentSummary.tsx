@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, SafeAreaView, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Header from '../../../components/Common/Header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LawyerStyles as styles } from '../../../theme/styles/LawyerStyles';
 import ProfileCard from '../../../components/Common/ProfileCard/ProfileCard';
+import { MyButton } from '../../../components/Common/MyButton';
 
 const AppointmentSummary = ({ route, navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const { caseData, lawyerData } = route.params || {};
   const [loading, setLoading] = useState(false);
 
@@ -72,14 +76,8 @@ const AppointmentSummary = ({ route, navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.bookingHeader}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={28} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.bookingHeaderTitle}>Appointment Summary</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={styles.container}>
+      <Header title="Appointment Summary" />
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingVertical: 20, paddingBottom: 100 }}>
         <Text style={styles.mainHeading}>Detailed Summary Of Your Case</Text>
@@ -115,20 +113,15 @@ const AppointmentSummary = ({ route, navigation }: any) => {
         />
       </ScrollView>
 
-      <View style={[styles.footerContainer, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#fff' }]}>
-        <TouchableOpacity 
-          style={[styles.nextActionButton, { backgroundColor: '#00cc66' }]} 
+      <View style={[styles.footerContainer, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#fff', paddingBottom: Math.max(insets.bottom, 15) }]}>
+        <MyButton 
+          title={loading ? "Submitting..." : "Appointment Request"}
           onPress={handleBookingSubmit}
           disabled={loading}
-        >
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.nextActionText}>Appointment Request</Text>
-          )}
-        </TouchableOpacity>
+          style={[styles.nextActionButton, { backgroundColor: loading ? '#ccc' : '#00cc66' }]}
+        />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

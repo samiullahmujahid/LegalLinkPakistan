@@ -17,6 +17,9 @@ interface NotificationContextProps {
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
   markAllAsRead: () => Promise<void>;
+  deleteNotification: (id: string) => Promise<void>;
+  clearAllNotifications: () => Promise<void>;
+  deleteMultipleNotifications: (ids: string[]) => Promise<void>;
   handleNotificationRedirect: (data: any) => void;
 }
 
@@ -91,6 +94,73 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       });
     } catch (error) {
       console.log('[NotificationProvider] Mark all read error:', error);
+      fetchNotifications();
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    try {
+      console.log('[NotificationProvider] deleteNotification called for ID:', id);
+      const isUnread = !notifications.find(n => n._id === id)?.isRead;
+      setNotifications(prev => prev.filter(n => n._id !== id));
+      if (isUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+
+      const token = await AsyncStorage.getItem('userToken');
+      console.log('[NotificationProvider] token retrieved for delete:', token ? 'exists' : 'null/empty');
+      if (!token) return;
+      const cleanToken = token.replace(/['"]+/g, '');
+      console.log('[NotificationProvider] sending DELETE to:', `${API_BASE}/notifications/${id}`);
+      const response = await axios.delete(`${API_BASE}/notifications/${id}`, {
+        headers: { Authorization: `Bearer ${cleanToken}` }
+      });
+      console.log('[NotificationProvider] delete success:', response.data);
+    } catch (error) {
+      console.log('[NotificationProvider] Delete notification error:', error);
+      fetchNotifications();
+    }
+  };
+
+  const clearAllNotifications = async () => {
+    try {
+      console.log('[NotificationProvider] clearAllNotifications called');
+      setNotifications([]);
+      setUnreadCount(0);
+
+      const token = await AsyncStorage.getItem('userToken');
+      console.log('[NotificationProvider] token retrieved for clearAll:', token ? 'exists' : 'null/empty');
+      if (!token) return;
+      const cleanToken = token.replace(/['"]+/g, '');
+      console.log('[NotificationProvider] sending DELETE to clear-all');
+      const response = await axios.delete(`${API_BASE}/notifications/clear-all`, {
+        headers: { Authorization: `Bearer ${cleanToken}` }
+      });
+      console.log('[NotificationProvider] clearAll success:', response.data);
+    } catch (error) {
+      console.log('[NotificationProvider] Clear all notifications error:', error);
+      fetchNotifications();
+    }
+  };
+
+  const deleteMultipleNotifications = async (ids: string[]) => {
+    try {
+      console.log('[NotificationProvider] deleteMultipleNotifications called for IDs:', ids);
+      const unreadSelectedCount = notifications.filter(n => ids.includes(n._id) && !n.isRead).length;
+      setNotifications(prev => prev.filter(n => !ids.includes(n._id)));
+      setUnreadCount(prev => Math.max(0, prev - unreadSelectedCount));
+
+      const token = await AsyncStorage.getItem('userToken');
+      console.log('[NotificationProvider] token retrieved for deleteMultiple:', token ? 'exists' : 'null/empty');
+      if (!token) return;
+      const cleanToken = token.replace(/['"]+/g, '');
+      console.log('[NotificationProvider] sending POST to delete-multiple');
+      const response = await axios.post(`${API_BASE}/notifications/delete-multiple`, { ids }, {
+        headers: { Authorization: `Bearer ${cleanToken}` }
+      });
+      console.log('[NotificationProvider] deleteMultiple success:', response.data);
+    } catch (error) {
+      console.log('[NotificationProvider] Delete multiple notifications error:', error);
       fetchNotifications();
     }
   };
@@ -204,13 +274,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Foreground: Animated Slide-down Alert Banner
         showToast(notification);
       } else {
-        // Background: Trigger OS Local System Banner
-        await NotificationService.displayNotification(
-          notification.title,
-          notification.body,
-          notification.type,
-          notification.data
-        );
+        // Background: Trigger OS Local System Banner (EXCEPT chat type)
+        if (notification.type !== 'chat') {
+          await NotificationService.displayNotification(
+            notification.title,
+            notification.body,
+            notification.type,
+            notification.data
+          );
+        } else {
+          console.log('[NotificationProvider] Suppressing background chat notification in native tray');
+        }
       }
     };
 
@@ -265,6 +339,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       fetchNotifications,
       markAsRead,
       markAllAsRead,
+      deleteNotification,
+      clearAllNotifications,
+      deleteMultipleNotifications,
       handleNotificationRedirect
     }}>
       {children}

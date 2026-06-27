@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TouchableOpacity, StyleSheet, Text, PanResponder, Animated, Platform, Image } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Text, PanResponder, Animated, Platform, Image, BackHandler, Alert } from 'react-native';
 import { RTCPeerConnection, RTCView, mediaDevices, RTCIceCandidate, RTCSessionDescription } from 'react-native-webrtc';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import socket from '../../../socket';
@@ -28,6 +28,44 @@ const CallScreen = ({ route, navigation }: any) => {
   ).current;
 
   const peerConnection = useRef<any>(null);
+  const isEndingCall = useRef(false);
+
+  // Intercept navigation back gesture/actions
+  useEffect(() => {
+    const handleBackPress = () => {
+      if (!isEndingCall.current) {
+        Alert.alert(
+          "Call in Progress",
+          "Please use the Red Hangup button to end the call and exit.",
+          [{ text: "OK", style: "cancel" }]
+        );
+        return true; // Blocks the back action
+      }
+      return false; // Allows the back action
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      'hardwareBackPress',
+      handleBackPress
+    );
+
+    const unsubscribeBeforeRemove = navigation.addListener('beforeRemove', (e: any) => {
+      if (isEndingCall.current) {
+        return;
+      }
+      e.preventDefault();
+      Alert.alert(
+        "Call in Progress",
+        "Please use the Red Hangup button to end the call.",
+        [{ text: "OK", style: "cancel" }]
+      );
+    });
+
+    return () => {
+      backHandler.remove();
+      unsubscribeBeforeRemove();
+    };
+  }, [navigation]);
 
   const getAvatarUri = (pic: string) => {
     if (!pic) return 'https://via.placeholder.com/150';
@@ -143,6 +181,7 @@ const CallScreen = ({ route, navigation }: any) => {
 
   const endCall = () => {
     console.log("Emitting callLog for booking:", bookingId);
+    isEndingCall.current = true;
     socket.emit('callLog', { bookingId, message: isVideo ? 'Video call ended' : 'Voice call ended' });
     navigation.goBack();
   };
@@ -151,7 +190,7 @@ const CallScreen = ({ route, navigation }: any) => {
     <View style={styles.container}>
       <TouchableOpacity activeOpacity={1} onPress={toggleVisibility} style={{ flex: 1 }}>
         {remoteStream && isVideo ? (
-          <RTCView streamURL={remoteStream.toURL()} style={styles.remoteVideo} />
+          <RTCView streamURL={remoteStream.toURL()} style={styles.remoteVideo} zOrder={0} />
         ) : (
           (isVisible || !isVideo) && (
             <View style={styles.voiceCallContainer}>
@@ -183,6 +222,7 @@ const CallScreen = ({ route, navigation }: any) => {
             streamURL={localStream.toURL()} 
             style={{ flex: 1 }} 
             mirror={isFrontCamera}
+            zOrder={2}
           />
         </Animated.View>
       )}
@@ -224,9 +264,10 @@ const styles = StyleSheet.create({
     position: 'absolute', 
     top: 60, 
     right: 20, 
-    zIndex: 10,
-    borderRadius: 12,
-    overflow: 'hidden',
+    zIndex: 99999,
+    elevation: 99999,
+    borderRadius: Platform.OS === 'ios' ? 12 : 0,
+    overflow: Platform.OS === 'ios' ? 'hidden' : 'visible',
     borderWidth: 1.5,
     borderColor: '#202c33',
   },

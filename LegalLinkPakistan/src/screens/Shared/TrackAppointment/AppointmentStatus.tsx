@@ -7,8 +7,9 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStripe } from '@stripe/stripe-react-native';
-import Header from '../Header';
+import Header from '../../../components/Common/Header';
 import { COLORS } from '../../../theme/theme';
+import { MyButton } from '../../../components/Common/MyButton';
 
 // Robust helper to parse scheduled Date & Time formats into a JS Date object
 const parseScheduledDateTime = (dateStr: string, timeStr: string): Date | null => {
@@ -264,15 +265,12 @@ const AppointmentStatus = ({ route, navigation }: any) => {
                 </Text>
               </View>
             ) : (
-              <TouchableOpacity 
-                style={styles.paymentButton} 
+              <MyButton 
+                title={`Pay Consultation Fee ${paymentCountdown ? `(Due: ${paymentCountdown})` : ''}`}
                 onPress={handleStripePayment} 
                 disabled={isProcessingPayment}
-              >
-                <Text style={styles.btnText}>
-                  Pay Consultation Fee {paymentCountdown ? `(Due: ${paymentCountdown})` : ''}
-                </Text>
-              </TouchableOpacity>
+                style={{ backgroundColor: COLORS.success, height: 50, marginTop: 0 }}
+              />
             )}
           </View>
         )}
@@ -301,26 +299,27 @@ const AppointmentStatus = ({ route, navigation }: any) => {
               </Text>
             </View>
 
-            <TouchableOpacity 
-              style={[
-                styles.chatButton, 
-                !isChatEnabled && { backgroundColor: COLORS.gray, opacity: 0.6 }
-              ]} 
+            <MyButton 
+              title={isChatEnabled ? 'Go to Chat' : 'Go to Chat (Locked)'}
               onPress={() => navigation.navigate('ChatsScreen', { bookingId: bookingId })}
               disabled={!isChatEnabled}
-            >
-              <Text style={styles.btnText}>
-                {isChatEnabled ? 'Go to Chat' : 'Go to Chat (Locked)'}
-              </Text>
-            </TouchableOpacity>
+              style={[
+                { backgroundColor: COLORS.info, height: 50, marginTop: 0 },
+                !isChatEnabled && { backgroundColor: COLORS.gray, opacity: 0.6 }
+              ]}
+            />
           </View>
         )}
 
         {/* Cancel Button */}
         {currentStatus !== 'rejected' && currentStatus !== 'completed' && currentStatus !== 'confirmed' && !paymentExpired && (
-          <TouchableOpacity style={styles.cancelButton} onPress={handleCancelAppointment}>
-            <Text style={styles.btnText}>Cancel Appointment</Text>
-          </TouchableOpacity>
+          <View style={{ width: '100%', marginBottom: 10 }}>
+            <MyButton 
+              title="Cancel Appointment" 
+              onPress={handleCancelAppointment}
+              style={{ backgroundColor: COLORS.danger, height: 50, marginTop: 0 }}
+            />
+          </View>
         )}
 
         {/* Details Card */}
@@ -339,9 +338,13 @@ const AppointmentStatus = ({ route, navigation }: any) => {
           <View style={styles.row}><Text style={styles.label}>Scheduled Time:</Text><Text style={styles.value}>{displayTime}</Text></View>
         </View>
 
-        <TouchableOpacity style={styles.dashboardBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.btnText}>Back to Dashboard</Text>
-        </TouchableOpacity>
+        <View style={{ width: '100%', marginTop: 10 }}>
+          <MyButton 
+            title="Back to Dashboard" 
+            onPress={() => navigation.goBack()}
+            style={{ backgroundColor: COLORS.primary, height: 50, marginTop: 0 }}
+          />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -349,7 +352,7 @@ const AppointmentStatus = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.lightBg },
-  content: { padding: 20, alignItems: 'center' },
+  content: { padding: 20, alignItems: 'stretch' },
   statusCard: { backgroundColor: COLORS.white, width: '100%', padding: 25, borderRadius: 15, alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: COLORS.lightGray },
   statusHeading: { fontSize: 24, fontWeight: 'bold', color: COLORS.primary, marginTop: 10 },
   paymentButton: { backgroundColor: COLORS.success, width: '100%', padding: 15, borderRadius: 10, alignItems: 'center', marginBottom: 10 },

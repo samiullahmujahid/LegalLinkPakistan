@@ -20,6 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { COLORS } from '../../theme/theme';
+import Header from '../../components/Common/Header';
 
 const { width } = Dimensions.get('window');
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
@@ -161,32 +162,18 @@ export const AiChatbotScreen = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Notch-safe Premium Header */}
-      <View style={[styles.header, { paddingTop: Platform.OS === 'ios' ? insets.top : insets.top + 10 }]}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="chevron-left" size={28} color="#fff" />
-        </TouchableOpacity>
-        
-        <View style={styles.headerTitleContainer}>
-          <View style={styles.aiIconCircle}>
-            <Icon name="scale-balance" size={18} color={COLORS.primary} />
-          </View>
-          <View>
-            <Text style={styles.headerText}>Insaaf-AI</Text>
-            <View style={styles.statusRow}>
-              <View style={styles.greenDot} />
-              <Text style={styles.statusText}>Active Online</Text>
-            </View>
-          </View>
-        </View>
-        
-        <TouchableOpacity 
-          style={[styles.modeToggleBtn, mode === 'dalle' && styles.modeToggleActive]}
-          onPress={() => setMode(prev => prev === 'chat' ? 'dalle' : 'chat')}
-        >
-          <Icon name={mode === 'dalle' ? "image-multiple" : "chat-processing"} size={20} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      <Header 
+        title="Insaaf-AI"
+        showBackButton={false}
+        rightElement={
+          <TouchableOpacity 
+            style={[styles.modeToggleBtn, mode === 'dalle' && styles.modeToggleActive]}
+            onPress={() => setMode(prev => prev === 'chat' ? 'dalle' : 'chat')}
+          >
+            <Icon name={mode === 'dalle' ? "image-multiple" : "chat-processing"} size={20} color="#fff" />
+          </TouchableOpacity>
+        }
+      />
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {/* Chat Log feed list */}

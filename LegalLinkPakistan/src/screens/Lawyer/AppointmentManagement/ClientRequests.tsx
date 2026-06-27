@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, SafeAreaView, FlatList, ActivityIndicator, Alert, RefreshControl, TouchableOpacity 
+  View, Text, SafeAreaView, FlatList, ActivityIndicator, Alert, RefreshControl, TouchableOpacity, Platform 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { LawyerStyles as styles } from '../../../theme/styles/LawyerStyles';
 import Bottombar from '../../../components/Common/BottomBar/Bottombar';
 
-// 🔥 CORRECTED RELATIVE PATH NODE BASED ON YOUR VS CODE TREE
-import RequestCard from '../../../components/Common/Requestcard/Requestcard'; 
+import StatusCard from '../../../components/Common/StatusCard/StatusCard';
 
 const ClientRequests = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,22 +74,38 @@ const ClientRequests = ({ navigation }: any) => {
   }, []);
 
   const getTimeAgo = (createdAtString: string) => {
-    if (!createdAtString) return '2 hours ago';
+    if (!createdAtString) return 'Just now';
     const dynamicDate = new Date(createdAtString);
-    if (isNaN(dynamicDate.getTime())) return '2 hours ago';
+    if (isNaN(dynamicDate.getTime())) return 'Just now';
+
+    const now = new Date();
     
-    const seconds = Math.floor((new Date().getTime() - dynamicDate.getTime()) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + ' years ago';
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + ' months ago';
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + ' days ago';
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + ' hours ago';
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + ' minutes ago';
-    return 'Just now';
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const createdDate = new Date(dynamicDate.getFullYear(), dynamicDate.getMonth(), dynamicDate.getDate());
+    
+    const diffTime = today.getTime() - createdDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      const diffSeconds = Math.floor((now.getTime() - dynamicDate.getTime()) / 1000);
+      if (diffSeconds < 60) return 'Just now';
+      
+      const diffMinutes = Math.floor(diffSeconds / 60);
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
+      
+      const diffHours = Math.floor(diffMinutes / 60);
+      return `${diffHours}h ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return dayNames[dynamicDate.getDay()];
+    } else {
+      const day = String(dynamicDate.getDate()).padStart(2, '0');
+      const month = String(dynamicDate.getMonth() + 1).padStart(2, '0');
+      const year = dynamicDate.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
   };
 
   const renderRequestItem = ({ item }: { item: any }) => {
@@ -104,25 +121,30 @@ const ClientRequests = ({ navigation }: any) => {
     }
 
     return (
-      <RequestCard
-        name={item.clientId?.name || 'Client Request'}
+      <StatusCard
+        title={item.clientId?.name || 'Client Request'}
         avatarUri={finalAvatarUrl || undefined}
-        line1Label="Case Type"
-        line1Value={item.category || item.caseType || 'Legal Assistance'}
-        line2Label="Case Subject"
-        line2Value={item.caseTitle || item.caseSubject || '######'}
+        line1={`Case Type: ${item.category || item.caseType || 'Legal Assistance'}`}
+        line2={`Case Subject: ${item.caseTitle || item.caseSubject || '######'}`}
         timeAgo={getTimeAgo(item.createdAt)}
-        status={item.status || 'pending'} 
-        onPressDetails={() => {
+        onPress={() => {
           navigation.navigate('RequestDetails', { bookingId: item._id });
         }}
+        containerStyle={{ marginHorizontal: 0 }}
       />
     );
   };
 
   return (
     <SafeAreaView style={styles.requestContainer}>
-      <View style={styles.reqBookingHeader}>
+      <View style={[
+        styles.reqBookingHeader,
+        {
+          height: undefined,
+          paddingTop: Platform.OS === 'ios' ? insets.top + 10 : insets.top + 15,
+          paddingBottom: 15,
+        }
+      ]}>
         <View style={{ width: 28 }} />
         <Text style={styles.reqBookingHeaderTitle}>Incoming Client Requests</Text>
         <TouchableOpacity onPress={fetchIncomingRequests}>

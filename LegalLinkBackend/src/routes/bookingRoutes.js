@@ -13,7 +13,8 @@ const {
     getBookingStatus,
     getClientBookings,
     getLawyerWallet,
-    completeAppointment
+    completeAppointment,
+    deleteBooking
 } = require('../controllers/bookingController');
 
 const { protect } = require('../middlewares/authMiddleware'); 
@@ -25,6 +26,7 @@ const { createAndSendNotification } = require('../services/notificationService')
 // ==========================================
 router.post('/create', protect, createBooking);
 router.get('/my-bookings', protect, getClientBookings);
+router.delete('/delete/:bookingId', protect, deleteBooking);
 
 // ✅ FIX: Populate both lawyerId AND clientId
 router.get('/status/:bookingId', protect, async (req, res) => {

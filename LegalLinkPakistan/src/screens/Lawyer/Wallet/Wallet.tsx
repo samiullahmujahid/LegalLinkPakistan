@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MyButton } from '../../../components/Common/MyButton';
 
 const Wallet = () => {
   const [data, setData] = useState({ 
@@ -104,17 +105,13 @@ const Wallet = () => {
               Link your account to receive consultation fees directly to your wallet.
             </Text>
           </View>
-          <TouchableOpacity 
-            style={styles.stripeLinkButton} 
+          <MyButton 
+            title={stripeLoading ? "Linking..." : "Link Stripe"}
             onPress={handleStripeOnboard}
             disabled={stripeLoading}
-          >
-            {stripeLoading ? (
-              <ActivityIndicator size="small" color="#fff" />
-            ) : (
-              <Text style={styles.stripeLinkText}>Link Stripe</Text>
-            )}
-          </TouchableOpacity>
+            style={[styles.stripeLinkButton, { height: 40, marginTop: 0 }]}
+            textStyle={styles.stripeLinkText}
+          />
         </View>
       )}
 

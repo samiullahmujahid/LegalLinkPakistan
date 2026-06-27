@@ -246,3 +246,34 @@ exports.acknowledgeWarning = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+
+// 7. Delete complaint (by reporter, client, or lawyer if status is resolved/closed)
+exports.deleteComplaint = async (req, res) => {
+    try {
+        const userId = req.user.id || req.user._id;
+        const complaint = await Complaint.findById(req.params.id);
+
+        if (!complaint) {
+            return res.status(404).json({ success: false, message: "Complaint not found" });
+        }
+
+        const isAuthorized = 
+            complaint.reportedBy.toString() === userId.toString() ||
+            complaint.clientId.toString() === userId.toString() ||
+            complaint.lawyerId.toString() === userId.toString();
+
+        if (!isAuthorized) {
+            return res.status(403).json({ success: false, message: "Unauthorized to delete this complaint" });
+        }
+
+        if (complaint.status !== 'resolved' && complaint.status !== 'closed') {
+            return res.status(400).json({ success: false, message: "Only resolved or closed complaints can be deleted" });
+        }
+
+        await Complaint.findByIdAndDelete(req.params.id);
+        res.status(200).json({ success: true, message: "Complaint deleted successfully" });
+    } catch (error) {
+        console.error("Delete Complaint Error:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};

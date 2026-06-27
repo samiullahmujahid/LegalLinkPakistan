@@ -9,8 +9,7 @@ type RoleNavProp = StackNavigationProp<RootStackParamList, 'RoleSelection'>;
 
 const RoleSelectionScreen = ({ navigation }: { navigation: RoleNavProp }) => {
   const handleRoleSelect = (role: 'Client' | 'Lawyer' | 'Admin') => {
-    if (role === 'Admin') navigation.navigate('AdminLogin');
-    else navigation.navigate('Login', { role });
+    navigation.navigate('Login', { role });
   };
 
   return (

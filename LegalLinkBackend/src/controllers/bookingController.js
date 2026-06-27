@@ -413,6 +413,36 @@ const submitComplaint = async (req, res) => {
     return res.status(200).json({ success: true, message: "Complaint logged for review" });
 };
 
+const deleteBooking = async (req, res) => {
+    try {
+        const userId = req.user.id || req.user._id;
+        const booking = await Booking.findById(req.params.bookingId);
+
+        if (!booking) {
+            return res.status(404).json({ success: false, message: "Booking not found" });
+        }
+
+        const isAuthorized = 
+            booking.clientId.toString() === userId.toString() ||
+            booking.lawyerId.toString() === userId.toString();
+
+        if (!isAuthorized) {
+            return res.status(403).json({ success: false, message: "Unauthorized to delete this booking" });
+        }
+
+        const deletableStatuses = ['completed', 'rejected'];
+        if (!deletableStatuses.includes(booking.status.toLowerCase())) {
+            return res.status(400).json({ success: false, message: "Only completed or rejected appointments can be deleted" });
+        }
+
+        await Booking.findByIdAndDelete(req.params.bookingId);
+        return res.status(200).json({ success: true, message: "Booking deleted successfully" });
+    } catch (error) {
+        console.error("Delete Booking Error:", error.message);
+        return res.status(500).json({ success: false, message: "Server Error deleting booking" });
+    }
+};
+
 module.exports = {
     createBooking,
     getLawyerActiveCount,
@@ -425,5 +455,6 @@ module.exports = {
     createPaymentIntent,
     confirmPayment,
     submitComplaint,
-    completeAppointment
+    completeAppointment,
+    deleteBooking
 };

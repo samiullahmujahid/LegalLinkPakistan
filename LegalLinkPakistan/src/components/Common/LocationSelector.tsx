@@ -41,16 +41,7 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
         return Object.keys(pakistanLocations[provinceKey]).map((d) => ({ label: d, value: d }));
       }
     }
-    // Fallback: all districts flat list
-    const allDistricts: string[] = [];
-    Object.keys(pakistanLocations).forEach((prov) => {
-      Object.keys(pakistanLocations[prov]).forEach((dist) => {
-        if (!allDistricts.includes(dist)) {
-          allDistricts.push(dist);
-        }
-      });
-    });
-    return allDistricts.sort().map((d) => ({ label: d, value: d }));
+    return [];
   }, [province]);
 
   const tehsilList = useMemo(() => {
@@ -66,88 +57,23 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
           return pakistanLocations[provinceKey][districtKey].map((t) => ({ label: t, value: t }));
         }
       }
-    } else if (district) {
-      for (const prov of Object.keys(pakistanLocations)) {
-        const distKey = Object.keys(pakistanLocations[prov]).find(
-          (d) => d.trim().toLowerCase() === district.trim().toLowerCase()
-        );
-        if (distKey && pakistanLocations[prov][distKey]) {
-          return pakistanLocations[prov][distKey].map((t) => ({ label: t, value: t }));
-        }
-      }
     }
-    // Fallback: all tehsils flat list
-    const allTehsils: string[] = [];
-    Object.keys(pakistanLocations).forEach((prov) => {
-      Object.keys(pakistanLocations[prov]).forEach((dist) => {
-        pakistanLocations[prov][dist].forEach((teh) => {
-          if (!allTehsils.includes(teh)) {
-            allTehsils.push(teh);
-          }
-        });
-      });
-    });
-    return allTehsils.sort().map((t) => ({ label: t, value: t }));
+    return [];
   }, [province, district]);
 
   const handleProvinceChange = (item: any) => {
     onProvinceChange(item.value);
-    // Only reset district/tehsil if the existing one does not belong to the selected province
-    if (district) {
-      const provinceKey = Object.keys(pakistanLocations).find(
-        (p) => p.trim().toLowerCase() === item.value.trim().toLowerCase()
-      );
-      if (provinceKey && pakistanLocations[provinceKey]) {
-        const hasDistrict = Object.keys(pakistanLocations[provinceKey]).some(
-          (d) => d.trim().toLowerCase() === district.trim().toLowerCase()
-        );
-        if (!hasDistrict) {
-          onDistrictChange('');
-          onTehsilChange('');
-        }
-      }
-    }
+    onDistrictChange('');
+    onTehsilChange('');
   };
 
   const handleDistrictChange = (item: any) => {
     onDistrictChange(item.value);
-    
-    // Reset tehsil if it does not belong to the selected district
-    if (tehsil) {
-      let matchFound = false;
-      for (const prov of Object.keys(pakistanLocations)) {
-        if (pakistanLocations[prov][item.value] && pakistanLocations[prov][item.value].includes(tehsil)) {
-          matchFound = true;
-          break;
-        }
-      }
-      if (!matchFound) {
-        onTehsilChange('');
-      }
-    }
-
-    // Auto-select Province if empty or mismatching
-    for (const prov of Object.keys(pakistanLocations)) {
-      if (pakistanLocations[prov][item.value]) {
-        onProvinceChange(prov);
-        break;
-      }
-    }
+    onTehsilChange('');
   };
 
   const handleTehsilChange = (item: any) => {
     onTehsilChange(item.value);
-
-    // Auto-select District and Province
-    for (const prov of Object.keys(pakistanLocations)) {
-      for (const dist of Object.keys(pakistanLocations[prov])) {
-        if (pakistanLocations[prov][dist].includes(item.value)) {
-          onProvinceChange(prov);
-          onDistrictChange(dist);
-          return;
-        }
-      }
-    }
   };
 
   const isClient = styleType === 'client';
@@ -180,20 +106,26 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       {/* 2. District Selection */}
       <View style={styles.dropdownWrapper}>
         {!isClient && <Text style={styles.fieldLabel}>District:</Text>}
-        <Dropdown
-          style={[
-            customStyles.dropdown,
-            errors.district ? styles.errorBorder : null,
-          ]}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          data={districtList}
-          labelField="label"
-          valueField="value"
-          placeholder="Select District"
-          value={district}
-          onChange={handleDistrictChange}
-        />
+        {province ? (
+          <Dropdown
+            style={[
+              customStyles.dropdown,
+              errors.district ? styles.errorBorder : null,
+            ]}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            data={districtList}
+            labelField="label"
+            valueField="value"
+            placeholder="Select District"
+            value={district}
+            onChange={handleDistrictChange}
+          />
+        ) : (
+          <View style={[customStyles.dropdown, styles.disabledStyle, { justifyContent: 'center' }]}>
+            <Text style={styles.placeholderStyle}>Select Province first</Text>
+          </View>
+        )}
         {errors.district && typeof errors.district === 'string' && (
           <Text style={styles.errorText}>{errors.district}</Text>
         )}
@@ -202,20 +134,26 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
       {/* 3. Tehsil Selection */}
       <View style={styles.dropdownWrapper}>
         {!isClient && <Text style={styles.fieldLabel}>Tehsil:</Text>}
-        <Dropdown
-          style={[
-            customStyles.dropdown,
-            errors.tehsil ? styles.errorBorder : null,
-          ]}
-          placeholderStyle={styles.placeholderStyle}
-          selectedTextStyle={styles.selectedTextStyle}
-          data={tehsilList}
-          labelField="label"
-          valueField="value"
-          placeholder="Select Tehsil"
-          value={tehsil}
-          onChange={handleTehsilChange}
-        />
+        {district ? (
+          <Dropdown
+            style={[
+              customStyles.dropdown,
+              errors.tehsil ? styles.errorBorder : null,
+            ]}
+            placeholderStyle={styles.placeholderStyle}
+            selectedTextStyle={styles.selectedTextStyle}
+            data={tehsilList}
+            labelField="label"
+            valueField="value"
+            placeholder="Select Tehsil"
+            value={tehsil}
+            onChange={handleTehsilChange}
+          />
+        ) : (
+          <View style={[customStyles.dropdown, styles.disabledStyle, { justifyContent: 'center' }]}>
+            <Text style={styles.placeholderStyle}>Select District first</Text>
+          </View>
+        )}
         {errors.tehsil && typeof errors.tehsil === 'string' && (
           <Text style={styles.errorText}>{errors.tehsil}</Text>
         )}

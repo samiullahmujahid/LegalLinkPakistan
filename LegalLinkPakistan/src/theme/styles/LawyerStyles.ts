@@ -6,17 +6,17 @@ export const LawyerStyles = StyleSheet.create({
   // ==========================================
   // MAIN LAYOUT & COMMON
   // ==========================================
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff' 
+  container: {
+    flex: 1,
+    backgroundColor: '#fff'
   },
-  scrollContent: { 
-    paddingBottom: 40, 
-    alignItems: 'center' 
+  scrollContent: {
+    paddingBottom: 40,
+    alignItems: 'center'
   },
-  form: { 
-    width: '88%', 
-    marginTop: 10 
+  form: {
+    width: '88%',
+    marginTop: 10
   },
   content: {
     paddingHorizontal: 20,
@@ -26,42 +26,43 @@ export const LawyerStyles = StyleSheet.create({
   // ==========================================
   // HEADERS, BRANDING & BOOKING HEADERS
   // ==========================================
-  headerSection: { 
-    alignItems: 'center', 
-    marginVertical: 20,
+  headerSection: {
+    alignItems: 'center',
+    marginVertical: 10,
+    paddingVertical: 10,
     width: '100%',
     paddingHorizontal: 20
   },
-  logo: { 
-    width: 100, 
-    height: 100, 
-    resizeMode: 'contain' 
+  logo: {
+    width: 100,
+    height: 100,
+    resizeMode: 'contain'
   },
-  brandName: { 
-    fontSize: 24, 
-    fontWeight: 'bold', 
-    color: '#001a4d', 
+  brandName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#001a4d',
     marginTop: 10
   },
-  subTitle: { 
-    fontSize: 16, 
-    color: '#001a4d', 
+  subTitle: {
+    fontSize: 16,
+    color: '#001a4d',
     marginTop: 5,
     fontWeight: '500',
-    textAlign: 'center' 
+    textAlign: 'center'
   },
-  bookingHeader: { 
-    backgroundColor: '#001a4d', 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 16, 
-    height: 60 
+  bookingHeader: {
+    backgroundColor: '#001a4d',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 60
   },
-  bookingHeaderTitle: { 
-    color: '#fff', 
-    fontSize: 18, 
-    fontWeight: '700' 
+  bookingHeaderTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700'
   },
   mainHeading: {
     fontSize: 20,
@@ -73,36 +74,36 @@ export const LawyerStyles = StyleSheet.create({
   // ==========================================
   // NAVIGATION, UTILITIES & ACTION BUTTONS
   // ==========================================
-  backBtn: { 
+  backBtn: {
     position: 'absolute',
     top: 20,
     left: 20,
     zIndex: 10,
-    borderWidth: 1, 
-    borderColor: '#001a4d', 
-    paddingHorizontal: 12, 
-    paddingVertical: 4, 
+    borderWidth: 1,
+    borderColor: '#001a4d',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
     borderRadius: 5,
     backgroundColor: '#fff'
   },
-  backText: { 
-    color: '#001a4d', 
-    fontSize: 12, 
-    fontWeight: 'bold' 
+  backText: {
+    color: '#001a4d',
+    fontSize: 12,
+    fontWeight: 'bold'
   },
-  submitBtn: { 
-    backgroundColor: '#001a4d', 
+  submitBtn: {
+    backgroundColor: '#001a4d',
     height: 50,
-    borderRadius: 25, 
-    alignItems: 'center', 
+    borderRadius: 25,
+    alignItems: 'center',
     justifyContent: 'center',
     marginTop: 30,
     width: '100%',
     elevation: 3
   },
-  buttonText: { 
-    color: '#fff', 
-    fontSize: 20, 
+  buttonText: {
+    color: '#fff',
+    fontSize: 20,
     fontWeight: 'bold',
     letterSpacing: 0.5
   },
@@ -127,23 +128,23 @@ export const LawyerStyles = StyleSheet.create({
   // ==========================================
   // INPUTS, DROPDOWNS & VALIDATION RULES
   // ==========================================
-  fieldLabel: { 
-    fontSize: 14, 
-    color: '#001a4d', 
-    marginBottom: 8, 
+  fieldLabel: {
+    fontSize: 14,
+    color: '#001a4d',
+    marginBottom: 8,
     fontWeight: 'bold',
-    marginTop: 15 
+    marginTop: 15
   },
   inputGroup: {
     marginBottom: 15,
     width: '100%',
   },
-  regInput: { 
-    borderWidth: 1, 
-    borderColor: '#001a4d', 
-    borderRadius: 10, 
-    padding: 12, 
-    marginBottom: 12, 
+  regInput: {
+    borderWidth: 1,
+    borderColor: '#001a4d',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 12,
     color: '#000',
     fontSize: 14,
     height: 48,
@@ -170,24 +171,24 @@ export const LawyerStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d1d5db',
   },
-  inputError: { 
+  inputError: {
     borderColor: 'red',
-    borderWidth: 1.5 
+    borderWidth: 1.5
   },
-  errorHint: { 
-    fontSize: 11, 
-    color: 'red', 
-    marginTop: -8, 
+  errorHint: {
+    fontSize: 11,
+    color: 'red',
+    marginTop: -8,
     marginBottom: 10,
     marginLeft: 5,
     fontWeight: '500'
   },
-  row: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    marginBottom: 5 
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5
   },
-  dropdown: { 
+  dropdown: {
     backgroundColor: '#e5e7eb',
     borderRadius: 10,
     height: 48,
@@ -416,36 +417,36 @@ export const LawyerStyles = StyleSheet.create({
   // ==========================================
   // UPLOAD SECTION & STATUS BOX
   // ==========================================
-  uploadBox: { 
-    borderWidth: 1.5, 
-    borderColor: '#001a4d', 
-    borderStyle: 'dashed', 
-    borderRadius: 15, 
-    height: 160, 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    marginVertical: 15, 
+  uploadBox: {
+    borderWidth: 1.5,
+    borderColor: '#001a4d',
+    borderStyle: 'dashed',
+    borderRadius: 15,
+    height: 160,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginVertical: 15,
     backgroundColor: '#f9f9f9',
     width: '100%',
-    position: 'relative' 
+    position: 'relative'
   },
-  requiredStar: { 
-    color: 'red', 
-    position: 'absolute', 
-    top: 5, 
+  requiredStar: {
+    color: 'red',
+    position: 'absolute',
+    top: 5,
     right: 10,
     fontSize: 18,
     fontWeight: 'bold'
   },
-  uploadText: { 
-    color: '#001a4d', 
-    marginTop: 8, 
-    fontSize: 13, 
-    fontWeight: '600' 
+  uploadText: {
+    color: '#001a4d',
+    marginTop: 8,
+    fontSize: 13,
+    fontWeight: '600'
   },
-  previewImg: { 
-    width: '100%', 
-    height: '100%', 
+  previewImg: {
+    width: '100%',
+    height: '100%',
     borderRadius: 14,
     resizeMode: 'cover'
   },
@@ -471,10 +472,10 @@ export const LawyerStyles = StyleSheet.create({
     color: '#555',
     fontWeight: '500'
   },
-  sectionTitle: { 
-    fontSize: 18, 
-    fontWeight: 'bold', 
-    color: '#001a4d', 
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#001a4d',
     marginBottom: 10,
     marginTop: 10
   },
@@ -534,18 +535,18 @@ export const LawyerStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  reqBookingHeader: { 
-    backgroundColor: '#001a4d', 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    justifyContent: 'space-between', 
-    paddingHorizontal: 16, 
-    height: 60 
+  reqBookingHeader: {
+    backgroundColor: '#001a4d',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 60
   },
-  reqBookingHeaderTitle: { 
-    color: '#fff', 
-    fontSize: 18, 
-    fontWeight: '700' 
+  reqBookingHeaderTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700'
   },
   requestCard: {
     backgroundColor: '#001a4d', // Synchronized exactly with your polymorphic layout
@@ -621,10 +622,10 @@ export const LawyerStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  emptyReqText: { 
-    textAlign: 'center', 
-    marginTop: 30, 
-    color: '#666', 
-    fontSize: 14 
+  emptyReqText: {
+    textAlign: 'center',
+    marginTop: 30,
+    color: '#666',
+    fontSize: 14
   }
 });

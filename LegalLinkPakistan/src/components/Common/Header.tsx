@@ -44,20 +44,27 @@ export const Header: React.FC<HeaderProps> = ({
         paddingBottom: 15
       }
     ]}>
-      <View style={styles.leftContainer}>
-        {leftElement ? (
-          leftElement
-        ) : showBackButton ? (
-          <TouchableOpacity onPress={handleBack} style={styles.iconBtn} activeOpacity={0.7}>
-            <Icon name="arrow-back-outline" size={24} color={textColor} />
-          </TouchableOpacity>
-        ) : null}
-      </View>
+      <View style={styles.mainLeftContent}>
+        {(leftElement || showBackButton) && (
+          <View style={styles.leftContainer}>
+            {leftElement ? (
+              leftElement
+            ) : (
+              <TouchableOpacity onPress={handleBack} style={styles.iconBtn} activeOpacity={0.7}>
+                <Icon name="arrow-back-outline" size={24} color={textColor} />
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
-      <View style={styles.titleContainer}>
-        <Text style={[styles.titleText, { color: textColor }]} numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={[
+          styles.titleContainer,
+          (leftElement || showBackButton) ? { marginLeft: 10 } : { marginLeft: 0 }
+        ]}>
+          <Text style={[styles.titleText, { color: textColor }]} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
       </View>
 
       <View style={styles.rightContainer}>
@@ -80,27 +87,30 @@ const styles = StyleSheet.create({
     elevation: 4,
     zIndex: 100,
   },
+  mainLeftContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 10,
+  },
   leftContainer: {
-    minWidth: 40,
-    alignItems: 'flex-start',
     justifyContent: 'center',
+    alignItems: 'flex-start',
   },
   titleContainer: {
     flex: 1,
-    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
+    alignItems: 'flex-start',
   },
   titleText: {
     fontSize: 18,
     fontWeight: 'bold',
-    textAlign: 'center',
+    textAlign: 'left',
     letterSpacing: 0.5,
   },
   rightContainer: {
-    minWidth: 40,
-    alignItems: 'flex-end',
     justifyContent: 'center',
+    alignItems: 'flex-end',
   },
   iconBtn: {
     padding: 4,

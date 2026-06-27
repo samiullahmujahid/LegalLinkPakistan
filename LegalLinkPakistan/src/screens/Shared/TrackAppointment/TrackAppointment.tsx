@@ -1,15 +1,18 @@
 import React, { useState, useCallback } from 'react';
 import { 
-  View, Text, SafeAreaView, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Alert 
+  View, Text, SafeAreaView, FlatList, ActivityIndicator, TouchableOpacity, RefreshControl, Alert, Platform 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
-import RequestCard from '../Requestcard/Requestcard';
 import { ClientStyles as styles } from '../../../theme/styles/ClientStyles';
+import Header from '../../../components/Common/Header';
+import StatusCard from '../../../components/Common/StatusCard/StatusCard';
 
 const TrackAppointment = ({ navigation, route }: any) => {
+  const insets = useSafeAreaInsets();
   const { role = 'client' } = route.params || {};
   
   const [activeTab, setActiveTab] = useState<'current' | 'pending' | 'completed'>('current');
@@ -78,11 +81,26 @@ const TrackAppointment = ({ navigation, route }: any) => {
   const deleteSelected = () => {
     Alert.alert("Delete", `Are you sure to delete ${selectedIds.length} items?`, [
       { text: "Cancel" },
-      { text: "Delete", style: 'destructive', onPress: () => {
-        // Yahan delete API call karein
-        console.log("Deleting:", selectedIds);
-        setSelectedIds([]);
-        setIsSelectionMode(false);
+      { text: "Delete", style: 'destructive', onPress: async () => {
+        try {
+          const token = await AsyncStorage.getItem('userToken') || await AsyncStorage.getItem('token');
+          const cleanToken = token?.trim().replace(/^["']|["']$/g, '');
+          
+          await Promise.all(selectedIds.map(id => 
+            axios.delete(`${BASE_URL}/api/bookings/delete/${id}`, {
+              headers: { 'Authorization': `Bearer ${cleanToken}` }
+            }).catch(() => {})
+          ));
+
+          const remainingBookings = allBookings.filter(b => !selectedIds.includes(b._id));
+          setAllBookings(remainingBookings);
+          filterBookings(remainingBookings, activeTab);
+        } catch (error) {
+          console.log("Deletion failed:", error);
+        } finally {
+          setSelectedIds([]);
+          setIsSelectionMode(false);
+        }
       }}
     ]);
   };
@@ -92,29 +110,62 @@ const TrackAppointment = ({ navigation, route }: any) => {
   const getTimeAgo = (createdAtString: string) => {
     if (!createdAtString) return 'Just now';
     const dynamicDate = new Date(createdAtString);
-    const seconds = Math.floor((new Date().getTime() - dynamicDate.getTime()) / 1000);
-    if (seconds / 3600 > 1) return Math.floor(seconds / 3600) + ' hours ago';
-    if (seconds / 60 > 1) return Math.floor(seconds / 60) + ' minutes ago';
-    return 'Just now';
+    if (isNaN(dynamicDate.getTime())) return 'Just now';
+
+    const now = new Date();
+    
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const createdDate = new Date(dynamicDate.getFullYear(), dynamicDate.getMonth(), dynamicDate.getDate());
+    
+    const diffTime = today.getTime() - createdDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      const diffSeconds = Math.floor((now.getTime() - dynamicDate.getTime()) / 1000);
+      if (diffSeconds < 60) return 'Just now';
+      
+      const diffMinutes = Math.floor(diffSeconds / 60);
+      if (diffMinutes < 60) return `${diffMinutes}m ago`;
+      
+      const diffHours = Math.floor(diffMinutes / 60);
+      return `${diffHours}h ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else if (diffDays < 7) {
+      const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      return dayNames[dynamicDate.getDay()];
+    } else {
+      const day = String(dynamicDate.getDate()).padStart(2, '0');
+      const month = String(dynamicDate.getMonth() + 1).padStart(2, '0');
+      const year = dynamicDate.getFullYear();
+      return `${day}/${month}/${year}`;
+    }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.bookingHeader}>
-        {isSelectionMode ? (
-          <>
-            <TouchableOpacity onPress={() => {setIsSelectionMode(false); setSelectedIds([])}}><Icon name="close" size={24} color="#fff" /></TouchableOpacity>
-            <Text style={styles.bookingHeaderTitle}>{selectedIds.length} Selected</Text>
-            <TouchableOpacity onPress={deleteSelected}><Icon name="delete" size={24} color="#ff3333" /></TouchableOpacity>
-          </>
-        ) : (
-          <>
-            <TouchableOpacity onPress={() => navigation.goBack()}><Icon name="arrow-left" size={24} color="#fff" /></TouchableOpacity>
-            <Text style={styles.bookingHeaderTitle}>Track Appointments</Text>
-            <TouchableOpacity onPress={fetchClientAppointments}><Icon name="refresh" size={24} color="#fff" /></TouchableOpacity>
-          </>
-        )}
-      </View>
+      <Header 
+        title={isSelectionMode ? `${selectedIds.length} Selected` : "Track Appointments"}
+        showBackButton={!isSelectionMode}
+        leftElement={
+          isSelectionMode ? (
+            <TouchableOpacity onPress={() => {setIsSelectionMode(false); setSelectedIds([])}}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          ) : undefined
+        }
+        rightElement={
+          isSelectionMode ? (
+            <TouchableOpacity onPress={deleteSelected}>
+              <Icon name="delete" size={24} color="#ff3333" />
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity onPress={fetchClientAppointments}>
+              <Icon name="refresh" size={24} color="#fff" />
+            </TouchableOpacity>
+          )
+        }
+      />
 
       <View style={styles.trackingTabContainer}>
         {tabs.map((tab) => (
@@ -140,20 +191,20 @@ const TrackAppointment = ({ navigation, route }: any) => {
 
             return (
               <TouchableOpacity 
+                activeOpacity={0.8}
                 onLongPress={() => toggleSelection(item._id)} 
                 onPress={() => isSelectionMode ? toggleSelection(item._id) : navigation.navigate('AppointmentStatus', { bookingId: item._id, role })}
-                style={{ opacity: isSelected ? 0.6 : 1, borderWidth: isSelected ? 2 : 0, borderColor: '#001a4d', borderRadius: 12, marginBottom: 10 }}
+                style={{ marginBottom: 10 }}
               >
-                <RequestCard
-                  name={displayName}
+                <StatusCard
+                  title={displayName}
                   avatarUri={finalAvatarUrl}
-                  line1Label="Category"
-                  line1Value={item.caseCategory || 'General Legal'}
-                  line2Label="Subject"
-                  line2Value={item.caseSubject || 'Case Consultation'}
+                  line1={`Category: ${item.caseCategory || 'General Legal'}`}
+                  line2={`Subject: ${item.caseSubject || 'Case Consultation'}`}
                   timeAgo={getTimeAgo(item.createdAt)}
-                  status={item.status}
-                  onPressDetails={() => navigation.navigate('AppointmentStatus', { bookingId: item._id, role })}
+                  onPress={() => isSelectionMode ? toggleSelection(item._id) : navigation.navigate('AppointmentStatus', { bookingId: item._id, role })}
+                  containerStyle={{ marginHorizontal: 0, marginBottom: 0 }}
+                  selected={isSelected}
                 />
               </TouchableOpacity>
             );

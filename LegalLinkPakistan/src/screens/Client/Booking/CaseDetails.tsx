@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, SafeAreaView, TextInput, TouchableOpacity, FlatList, Alert 
+  View, Text, TextInput, TouchableOpacity, FlatList, Alert, Platform, StatusBar 
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Header from '../../../components/Common/Header';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LawyerStyles as styles } from '../../../theme/styles/LawyerStyles';
 import ProfileCard from '../../../components/Common/ProfileCard/ProfileCard';
+import { MyButton } from '../../../components/Common/MyButton';
 
 const courtLevels = [
   { label: 'Supreme Court', value: 'Supreme Court' },
@@ -22,6 +25,7 @@ const caseTypes = [
 ];
 
 const CaseDetails = ({ navigation }: any) => {
+  const insets = useSafeAreaInsets();
   const [courtLevel, setCourtLevel] = useState('');
   const [caseType, setCaseType] = useState('');
   const [subject, setSubject] = useState('');
@@ -115,14 +119,8 @@ const CaseDetails = ({ navigation }: any) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.bookingHeader}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Icon name="arrow-left" size={28} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.bookingHeaderTitle}>Appointment Booking</Text>
-        <View style={{ width: 28 }} />
-      </View>
+    <View style={styles.container}>
+      <Header title="Appointment Booking" />
 
       <FlatList
         data={filteredLawyers}
@@ -212,12 +210,14 @@ const CaseDetails = ({ navigation }: any) => {
         }
       />
 
-      <View style={[styles.footerContainer, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#fff' }]}>
-        <TouchableOpacity style={styles.nextActionButton} onPress={handleNext}>
-          <Text style={styles.nextActionText}>Next</Text>
-        </TouchableOpacity>
+      <View style={[styles.footerContainer, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#fff', paddingBottom: Math.max(insets.bottom, 15) }]}>
+        <MyButton 
+          title="Next"
+          onPress={handleNext}
+          style={styles.nextActionButton}
+        />
       </View>
-    </SafeAreaView>
+    </View>
   );
 };
 

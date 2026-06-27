@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator, 
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import ComplaintCard from '../../components/Common/ComplaintCard/ComplaintCard';
+import StatusCard from '../../components/Common/StatusCard/StatusCard';
 import Header from '../../components/Common/Header';
 
 const ComplaintHandling = ({ navigation }: any) => {
@@ -66,12 +66,14 @@ const ComplaintHandling = ({ navigation }: any) => {
                     data={complaints}
                     keyExtractor={(item: any) => item._id}
                     renderItem={({ item }) => (
-                        <ComplaintCard
-                            clientName={item.clientId?.name || "Client Not Found"}
-                            lawyerName={item.lawyerId?.name || "Lawyer Not Found"}
-                            clientImage={item.clientId?.profilePic || null}
-                            subject={item.subject || "No Subject"}
+                        <StatusCard
+                            title={item.subject || "No Subject"}
+                            avatarUri={item.clientId?.profilePic ? `https://mug-work-public.ngrok-free.dev${item.clientId.profilePic.startsWith('/') ? '' : '/'}${item.clientId.profilePic}` : null}
+                            line1={`C: ${item.clientId?.name || "Client Not Found"}`}
+                            line2={`L: ${item.lawyerId?.name || "Lawyer Not Found"}`}
                             onPress={() => navigation.navigate('ComplaintDetails', { id: item._id })}
+                            theme="light"
+                            containerStyle={{ marginHorizontal: 16 }}
                         />
                     )}
                     ListEmptyComponent={

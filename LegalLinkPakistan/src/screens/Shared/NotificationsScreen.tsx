@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
-  View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator 
+  View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert 
 } from 'react-native';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../../components/Common/Header';
 import { useNotifications } from '../../components/Common/NotificationProvider';
@@ -13,8 +14,14 @@ export const NotificationsScreen = () => {
     fetchNotifications, 
     markAsRead, 
     markAllAsRead, 
+    deleteNotification,
+    clearAllNotifications,
+    deleteMultipleNotifications,
     handleNotificationRedirect 
   } = useNotifications();
+
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   useEffect(() => {
     fetchNotifications();
@@ -72,16 +79,123 @@ export const NotificationsScreen = () => {
     handleNotificationRedirect(item.data);
   };
 
+  const renderRightActions = (progress: any, dragX: any, id: string) => {
+    return (
+      <TouchableOpacity 
+        style={styles.deleteSwipeBtn} 
+        onPress={() => deleteNotification(id)}
+        activeOpacity={0.8}
+      >
+        <Icon name="trash-can-outline" size={24} color="#fff" />
+        <Text style={styles.deleteSwipeText}>Delete</Text>
+      </TouchableOpacity>
+    );
+  };
+
+  const toggleSelectNotification = (id: string) => {
+    if (selectedIds.includes(id)) {
+      const filtered = selectedIds.filter(item => item !== id);
+      setSelectedIds(filtered);
+      if (filtered.length === 0) {
+        setIsSelectionMode(false);
+      }
+    } else {
+      setSelectedIds(prev => [...prev, id]);
+    }
+  };
+
+  const handleLongPress = (id: string) => {
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+      setSelectedIds([id]);
+    }
+  };
+
+  const handlePressItem = (item: any) => {
+    if (isSelectionMode) {
+      toggleSelectNotification(item._id);
+    } else {
+      handleItemPress(item);
+    }
+  };
+
+  const handleBatchDelete = () => {
+    if (selectedIds.length === 0) return;
+    Alert.alert(
+      "Delete Selected",
+      `Are you sure you want to delete ${selectedIds.length} selected notifications?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete", 
+          style: "destructive",
+          onPress: async () => {
+            await deleteMultipleNotifications(selectedIds);
+            setSelectedIds([]);
+            setIsSelectionMode(false);
+          }
+        }
+      ]
+    );
+  };
+
+  const handleCancelSelection = () => {
+    setSelectedIds([]);
+    setIsSelectionMode(false);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === notifications.length) {
+      setSelectedIds([]);
+      setIsSelectionMode(false);
+    } else {
+      setSelectedIds(notifications.map(n => n._id));
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <Header 
-        title="Notifications" 
-        rightElement={
-          notifications.some(n => !n.isRead) ? (
-            <TouchableOpacity onPress={markAllAsRead} style={styles.readAllBtn}>
-              <Text style={styles.readAllText}>Mark read</Text>
+        title={isSelectionMode ? `${selectedIds.length} Selected` : "Notifications"} 
+        showBackButton={!isSelectionMode}
+        leftElement={
+          isSelectionMode ? (
+            <TouchableOpacity onPress={handleCancelSelection} style={{ padding: 4 }}>
+              <Icon name="close" size={24} color="#fff" />
             </TouchableOpacity>
           ) : undefined
+        }
+        rightElement={
+          isSelectionMode ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <TouchableOpacity onPress={handleSelectAll} style={[styles.readAllBtn, { marginRight: 10 }]}>
+                <Text style={styles.readAllText}>
+                  {selectedIds.length === notifications.length ? "Deselect" : "Select All"}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={handleBatchDelete} 
+                style={styles.clearAllBtn} 
+                activeOpacity={0.7} 
+                disabled={selectedIds.length === 0}
+              >
+                <Icon name="trash-can" size={20} color={selectedIds.length === 0 ? "rgba(255,255,255,0.4)" : "#fff"} />
+              </TouchableOpacity>
+            </View>
+          ) : (
+            notifications.length > 0 ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {notifications.some(n => !n.isRead) && (
+                  <TouchableOpacity onPress={markAllAsRead} style={[styles.readAllBtn, { marginRight: 10 }]}>
+                    <Text style={styles.readAllText}>Mark read</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity onPress={clearAllNotifications} style={styles.clearAllBtn} activeOpacity={0.7}>
+                  <Icon name="trash-can-outline" size={20} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            ) : undefined
+          )
         }
       />
 
@@ -90,20 +204,36 @@ export const NotificationsScreen = () => {
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => {
+      renderItem={({ item }) => {
           const iconName = getNotificationIcon(item.type);
           const iconColor = getNotificationColor(item.type);
+          const isSelected = selectedIds.includes(item._id);
 
-          return (
+          const cardContent = (
             <TouchableOpacity 
-              style={[styles.card, !item.isRead && styles.unreadCard]}
-              onPress={() => handleItemPress(item)}
+              style={[
+                styles.card, 
+                !item.isRead && styles.unreadCard,
+                isSelectionMode && isSelected && styles.selectedCard
+              ]}
+              onPress={() => handlePressItem(item)}
+              onLongPress={() => handleLongPress(item._id)}
               activeOpacity={0.7}
             >
-              {/* Type-based Circular Icon */}
-              <View style={[styles.iconContainer, { backgroundColor: iconColor + '12' }]}>
-                <Icon name={iconName} size={22} color={iconColor} />
-              </View>
+              {/* Type-based Circular Icon or Checkbox */}
+              {isSelectionMode ? (
+                <View style={styles.checkboxContainer}>
+                  <Icon 
+                    name={isSelected ? "checkbox-marked" : "checkbox-blank-outline"} 
+                    size={24} 
+                    color={isSelected ? COLORS.primary : "#94a3b8"} 
+                  />
+                </View>
+              ) : (
+                <View style={[styles.iconContainer, { backgroundColor: iconColor + '12' }]}>
+                  <Icon name={iconName} size={22} color={iconColor} />
+                </View>
+              )}
 
               {/* Title & Body content */}
               <View style={styles.detailsContainer}>
@@ -120,11 +250,34 @@ export const NotificationsScreen = () => {
                 </Text>
               </View>
 
-              {/* Unread indicator dot */}
-              {!item.isRead && (
-                <View style={styles.unreadDot} />
+              {/* Unread indicator dot (only when NOT in Selection Mode) */}
+              {!isSelectionMode && !item.isRead && (
+                <View style={[styles.unreadDot, { alignSelf: 'center', marginRight: 4 }]} />
               )}
             </TouchableOpacity>
+          );
+
+          if (isSelectionMode) {
+            return (
+              <View style={{ marginBottom: 10 }}>
+                {cardContent}
+              </View>
+            );
+          }
+
+          return (
+            <Swipeable 
+              key={item._id}
+              renderRightActions={(progress, dragX) => renderRightActions(progress, dragX, item._id)}
+              containerStyle={{ marginBottom: 10 }}
+              onSwipeableOpen={(direction) => {
+                if (direction === 'right') {
+                  deleteNotification(item._id);
+                }
+              }}
+            >
+              {cardContent}
+            </Swipeable>
           );
         }}
         ListEmptyComponent={
@@ -157,6 +310,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  clearAllBtn: {
+    padding: 6,
+    borderRadius: 6,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedCard: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary + '08',
+  },
+  checkboxContainer: {
+    width: 42,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   listContainer: {
     padding: 15,
     flexGrow: 1,
@@ -167,7 +337,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 14,
     borderRadius: 14,
-    marginBottom: 10,
     borderWidth: 1,
     borderColor: '#f1f5f9',
     shadowColor: '#0f172a',
@@ -175,6 +344,21 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.03,
     shadowRadius: 4,
     elevation: 2,
+  },
+  deleteSwipeBtn: {
+    backgroundColor: COLORS.danger,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 80,
+    borderRadius: 14,
+    marginLeft: 10,
+    height: '100%',
+  },
+  deleteSwipeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    marginTop: 4,
   },
   unreadCard: {
     borderColor: COLORS.primary + '18',

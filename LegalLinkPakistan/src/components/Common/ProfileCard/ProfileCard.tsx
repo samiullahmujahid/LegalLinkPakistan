@@ -122,9 +122,29 @@ const styles = StyleSheet.create({
   ratingRow: { flexDirection: 'row', marginTop: 5, alignItems: 'center' },
   ratingText: { fontSize: 12, color: '#888', marginLeft: 5 },
   buttonSection: { justifyContent: 'center', alignItems: 'center' },
-  btn: { backgroundColor: '#001a4d', paddingVertical: 8, paddingHorizontal: 15, borderRadius: 8 },
+  btn: { 
+    backgroundColor: '#001a4d', 
+    width: 110,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16
+  },
   btnActive: { backgroundColor: '#28a745' },
-  btnText: { color: '#fff', fontSize: 12, fontWeight: 'bold' }
+  btnText: { color: '#fff', fontSize: 12, fontWeight: 'bold', textAlign: 'center' }
 });
 
-export default ProfileCard;
+const ProfileCardMemoized = React.memo(ProfileCard, (prevProps, nextProps) => {
+  return (
+    prevProps.isSelected === nextProps.isSelected &&
+    prevProps.userData?._id === nextProps.userData?._id &&
+    prevProps.userData?.name === nextProps.userData?.name &&
+    prevProps.userData?.rating === nextProps.userData?.rating &&
+    prevProps.userData?.expertise === nextProps.userData?.expertise &&
+    prevProps.userData?.profilePicUri === nextProps.userData?.profilePicUri &&
+    prevProps.rightButtonText === nextProps.rightButtonText &&
+    prevProps.showActiveCount === nextProps.showActiveCount
+  );
+});
+
+export default ProfileCardMemoized;

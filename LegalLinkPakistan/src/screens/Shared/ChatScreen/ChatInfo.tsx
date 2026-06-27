@@ -4,6 +4,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RatingAlert from '../../../components/Common/Alert/Alert';
+import Header from '../../../components/Common/Header';
+import { MyButton } from '../../../components/Common/MyButton';
 
 const ChatInfo = ({ route, navigation }: any) => {
   const { bookingId } = route.params;
@@ -83,10 +85,11 @@ const ChatInfo = ({ route, navigation }: any) => {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar barStyle="dark-content" />
-      <View style={{ flexDirection: 'row', alignItems: 'center', padding: 15, borderBottomWidth: 0.5, borderColor: '#ddd' }}>
-        <TouchableOpacity onPress={() => navigation.goBack()}><Icon name="arrow-left" size={26} color="#000" /></TouchableOpacity>
-        <Text style={{ fontSize: 18, fontWeight: '600', marginLeft: 15 }}>{isLawyerViewing ? "Client Profile" : "Lawyer Profile"}</Text>
-      </View>
+      <Header 
+        title={isLawyerViewing ? "Client Profile" : "Lawyer Profile"} 
+        backgroundColor="#fff" 
+        textColor="#000" 
+      />
 
       {loading ? (
         <ActivityIndicator size="large" color="#001a4d" style={{ marginTop: 50 }} />
@@ -114,17 +117,16 @@ const ChatInfo = ({ route, navigation }: any) => {
           </View>
 
           {!isLawyerViewing && (
-            <TouchableOpacity
+            <MyButton 
+              title="Complete Appointment"
               onPress={() => setShowRatingAlert(true)}
-              style={{ marginTop: 30, marginHorizontal: 20, backgroundColor: '#001a4d', padding: 15, borderRadius: 10, alignItems: 'center' }}
-            >
-              <Text style={{ color: '#fff', fontWeight: '600' }}>Complete Appointment</Text>
-            </TouchableOpacity>
+              style={{ marginTop: 30, marginHorizontal: 20, borderRadius: 10 }}
+            />
           )}
 
-          <TouchableOpacity
+          <MyButton 
+            title="Add Complaint to Admin"
             onPress={() => {
-              // Force-convert to ensure the complaint screen receives a pure string
               const finalId = typeof profileData.id === 'string' ? profileData.id : String(profileData.id);
               navigation.navigate('ComplaintScreen', { 
                   targetId: finalId, 
@@ -132,10 +134,8 @@ const ChatInfo = ({ route, navigation }: any) => {
                   role: isLawyerViewing ? 'lawyer' : 'client'
               });
             }}
-            style={{ marginTop: 15, marginHorizontal: 20, backgroundColor: '#d9534f', padding: 15, borderRadius: 10, alignItems: 'center' }}
-          >
-            <Text style={{ color: '#fff', fontWeight: '600' }}>Add Complaint to Admin</Text>
-          </TouchableOpacity>
+            style={{ marginTop: 15, marginHorizontal: 20, backgroundColor: '#d9534f', borderRadius: 10 }}
+          />
         </ScrollView>
       )}
 

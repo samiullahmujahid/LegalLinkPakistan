@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, FlatList,
-  KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, Image, PermissionsAndroid, Alert, Keyboard
+  KeyboardAvoidingView, Platform, StatusBar, Image, PermissionsAndroid, Alert, Keyboard, Modal
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -16,6 +17,8 @@ Sound.setCategory('Playback');
 
 const ChatScreen = ({ route, navigation }: any) => {
   const { bookingId, partnerName, partnerPic } = route.params;
+  const insets = useSafeAreaInsets();
+  const headerPaddingTop = Platform.OS === 'ios' ? insets.top + 10 : insets.top + 15;
 
   const [messages, setMessages] = useState<any[]>([]);
   const [inputText, setInputText] = useState('');
@@ -23,6 +26,21 @@ const ChatScreen = ({ route, navigation }: any) => {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+
+  const getFileUrl = (url: string) => {
+    if (!url) return '';
+    let finalUrl = url;
+    if (!url.startsWith('http')) {
+      const cleanUrl = url.startsWith('/') ? url : `/${url}`;
+      finalUrl = `https://mug-work-public.ngrok-free.dev${cleanUrl}`;
+    }
+    // Force https on ngrok URLs to bypass cleartext policy
+    if (finalUrl.startsWith('http://mug-work-public.ngrok-free.dev')) {
+      finalUrl = finalUrl.replace('http://', 'https://');
+    }
+    return finalUrl;
+  };
 
   const emojis = ['😀', '😂', '😍', '👍', '🙏', '🔥', '👏', '🎉', '😢', '😡', '❤️', '💼', '⚖️', '📝', '📞', '🏛️'];
 
@@ -323,7 +341,8 @@ const ChatScreen = ({ route, navigation }: any) => {
   };
 
   const playAudio = (url: string) => {
-    const whoosh = new Sound(url, '', (error) => {
+    const finalUrl = getFileUrl(url);
+    const whoosh = new Sound(finalUrl, '', (error) => {
       if (!error) whoosh.play();
     });
   };
@@ -388,9 +407,9 @@ const ChatScreen = ({ route, navigation }: any) => {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <SafeAreaView style={chatStyles.container}>
+      <View style={chatStyles.container}>
         <StatusBar barStyle="light-content" />
-        <View style={chatStyles.header}>
+        <View style={[chatStyles.header, { paddingTop: headerPaddingTop, paddingBottom: 15 }]}>
           <TouchableOpacity onPress={() => navigation.goBack()}>
             <Icon name="arrow-left" size={25} color="#fff" />
           </TouchableOpacity>
@@ -421,7 +440,7 @@ const ChatScreen = ({ route, navigation }: any) => {
 
         <FlatList
           data={messages}
-          keyExtractor={(_, index) => index.toString()}
+          keyExtractor={(item, index) => item.id || item._id || index.toString()}
           contentContainerStyle={{ paddingBottom: 15 }}
           renderItem={({ item, index }) => {
             const isMe = item.sender === currentUser?.id;
@@ -483,11 +502,13 @@ const ChatScreen = ({ route, navigation }: any) => {
                 ) : item.type === 'file' ? (
                   <View style={[chatStyles.msgBubble, isMe ? chatStyles.myMsg : chatStyles.theirMsg, { maxWidth: '75%', padding: 5 }]}>
                     {item.text.match(/\.(jpeg|jpg|gif|png)$/i) ? (
-                      <Image 
-                        source={{ uri: item.text }} 
-                        style={{ width: 220, height: 160, borderRadius: 8, marginBottom: 5 }} 
-                        resizeMode="cover"
-                      />
+                      <TouchableOpacity onPress={() => setSelectedImageUri(getFileUrl(item.text))}>
+                        <Image 
+                          source={{ uri: getFileUrl(item.text) }} 
+                          style={{ width: 220, height: 160, borderRadius: 8, marginBottom: 5 }} 
+                          resizeMode="cover"
+                        />
+                      </TouchableOpacity>
                     ) : (
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 5, padding: 5 }}>
                         <Icon name="file-document-outline" size={36} color={isMe ? '#001a4d' : '#001a4d'} />
@@ -520,7 +541,7 @@ const ChatScreen = ({ route, navigation }: any) => {
         />
 
         {isRecording ? (
-          <View style={chatStyles.inputContainer}>
+          <View style={[chatStyles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
             <View style={chatStyles.recordingPill}>
               <View style={chatStyles.recordingDot} />
               <Text style={chatStyles.recordingTimer}>{formatDuration(recordingSeconds)}</Text>
@@ -535,7 +556,7 @@ const ChatScreen = ({ route, navigation }: any) => {
           </View>
         ) : (
           <View>
-            <View style={chatStyles.inputContainer}>
+            <View style={[chatStyles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
               <View style={chatStyles.inputPill}>
                 <TouchableOpacity 
                   style={chatStyles.inputIcon} 
@@ -590,7 +611,7 @@ const ChatScreen = ({ route, navigation }: any) => {
                 borderTopWidth: 0.5, 
                 borderTopColor: '#e0e0e0',
                 justifyContent: 'space-evenly',
-                paddingBottom: Platform.OS === 'ios' ? 30 : 10
+                paddingBottom: Math.max(insets.bottom, 10)
               }}>
                 {emojis.map((emoji) => (
                   <TouchableOpacity 
@@ -605,7 +626,29 @@ const ChatScreen = ({ route, navigation }: any) => {
             )}
           </View>
         )}
-      </SafeAreaView>
+        {selectedImageUri && (
+          <Modal 
+            visible={!!selectedImageUri} 
+            transparent={true} 
+            animationType="fade"
+            onRequestClose={() => setSelectedImageUri(null)}
+          >
+            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.95)', justifyContent: 'center', alignItems: 'center' }}>
+              <TouchableOpacity 
+                style={{ position: 'absolute', top: Platform.OS === 'ios' ? 60 : 30, right: 20, zIndex: 10, padding: 10 }} 
+                onPress={() => setSelectedImageUri(null)}
+              >
+                <Icon name="close" size={30} color="#fff" />
+              </TouchableOpacity>
+              <Image 
+                source={{ uri: selectedImageUri }} 
+                style={{ width: '100%', height: '80%' }} 
+                resizeMode="contain" 
+              />
+            </View>
+          </Modal>
+        )}
+      </View>
     </KeyboardAvoidingView>
   );
 };

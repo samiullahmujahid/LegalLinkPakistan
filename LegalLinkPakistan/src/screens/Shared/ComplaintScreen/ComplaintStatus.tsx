@@ -3,17 +3,59 @@ import { View, Text, TouchableOpacity, FlatList, SafeAreaView, StyleSheet, Activ
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from '../Header';
+import Header from '../../../components/Common/Header';
 import { COLORS } from '../../../theme/theme';
 
 const ComplaintStatus = ({ navigation }: any) => {
   const [activeTab, setActiveTab] = useState('pending'); 
-  const [complaints, setComplaints] = useState([]);
+  const [complaints, setComplaints] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [userRole, setUserRole] = useState('');
+  
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+
+  const toggleSelection = (id: string) => {
+    if (activeTab !== 'resolved') return;
+    if (selectedIds.includes(id)) {
+      const newIds = selectedIds.filter(i => i !== id);
+      setSelectedIds(newIds);
+      if (newIds.length === 0) setIsSelectionMode(false);
+    } else {
+      setSelectedIds([...selectedIds, id]);
+      setIsSelectionMode(true);
+    }
+  };
+
+  const deleteSelected = () => {
+    Alert.alert("Delete Complaints", `Are you sure you want to delete ${selectedIds.length} resolved complaints?`, [
+      { text: "Cancel" },
+      { text: "Delete", style: 'destructive', onPress: async () => {
+        try {
+          const token = (await AsyncStorage.getItem('userToken'))?.replace(/['"]+/g, '');
+          
+          await Promise.all(selectedIds.map(id => 
+            axios.delete(`https://mug-work-public.ngrok-free.dev/api/complaints/delete/${id}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            }).catch(() => {})
+          ));
+
+          const remainingComplaints = complaints.filter((c: any) => !selectedIds.includes(c._id));
+          setComplaints(remainingComplaints);
+        } catch (error) {
+          console.log("Delete failed:", error);
+        } finally {
+          setSelectedIds([]);
+          setIsSelectionMode(false);
+        }
+      }}
+    ]);
+  };
 
   useEffect(() => {
     fetchMyComplaints();
+    setSelectedIds([]);
+    setIsSelectionMode(false);
   }, [activeTab]);
 
   const fetchMyComplaints = async () => {
@@ -85,7 +127,24 @@ const ComplaintStatus = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.lightBg }]}>
-      <Header title="Complaint Tracker" />
+      <Header 
+        title={isSelectionMode ? `${selectedIds.length} Selected` : "Complaint Tracker"} 
+        showBackButton={!isSelectionMode}
+        leftElement={
+          isSelectionMode ? (
+            <TouchableOpacity onPress={() => {setIsSelectionMode(false); setSelectedIds([])}}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          ) : undefined
+        }
+        rightElement={
+          isSelectionMode ? (
+            <TouchableOpacity onPress={deleteSelected}>
+              <Icon name="delete" size={24} color="#ff3333" />
+            </TouchableOpacity>
+          ) : undefined
+        }
+      />
 
       {/* Modern Segmented Controller Tabs */}
       <View style={styles.tabContainer}>
@@ -120,73 +179,81 @@ const ComplaintStatus = ({ navigation }: any) => {
               : (item.type === 'client' ? 'Against Lawyer' : 'Complained By Lawyer');
             
             const badge = getStatusBadge(item.status);
+            const isSelected = selectedIds.includes(item._id);
 
             return (
-              <View style={styles.card}>
-                <View style={styles.cardHeader}>
-                  <Text style={styles.cardTitle}>{item.subject}</Text>
-                  <View style={[styles.badgeContainer, { backgroundColor: badge.bg }]}>
-                    <Text style={[styles.badgeText, { color: badge.text }]}>{badge.label}</Text>
-                  </View>
-                </View>
-
-                <View style={styles.divider} />
-
-                <View style={styles.cardBody}>
-                  <View style={styles.metaRow}>
-                    <Icon name="account-outline" size={16} color="#64748b" />
-                    <Text style={styles.metaLabel}>{relationshipLabel}: </Text>
-                    <Text style={styles.metaValue}>{otherPartyName || "N/A"}</Text>
+              <TouchableOpacity
+                activeOpacity={0.8}
+                onLongPress={() => toggleSelection(item._id)}
+                onPress={() => isSelectionMode ? toggleSelection(item._id) : undefined}
+                style={{ opacity: isSelected ? 0.6 : 1 }}
+              >
+                <View style={[styles.card, isSelected && { borderWidth: 2, borderColor: '#001a4d' }]}>
+                  <View style={styles.cardHeader}>
+                    <Text style={styles.cardTitle}>{item.subject}</Text>
+                    <View style={[styles.badgeContainer, { backgroundColor: badge.bg }]}>
+                      <Text style={[styles.badgeText, { color: badge.text }]}>{badge.label}</Text>
+                    </View>
                   </View>
 
-                  <View style={styles.metaRow}>
-                    <Icon name="calendar-range" size={16} color="#64748b" />
-                    <Text style={styles.metaLabel}>Submitted: </Text>
-                    <Text style={styles.metaValue}>
-                      {new Date(item.createdAt).toLocaleDateString(undefined, {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric'
-                      })}
-                    </Text>
-                  </View>
-                  
-                  {item.adminResponse ? (
-                    <View style={styles.adminNoteBox}>
-                      <View style={styles.adminNoteHeader}>
-                        <Icon name="shield-account-outline" size={16} color="#856404" />
-                        <Text style={styles.adminLabel}> Admin Remarks</Text>
+                  <View style={styles.divider} />
+
+                  <View style={styles.cardBody}>
+                    <View style={styles.metaRow}>
+                      <Icon name="account-outline" size={16} color="#64748b" />
+                      <Text style={styles.metaLabel}>{relationshipLabel}: </Text>
+                      <Text style={styles.metaValue}>{otherPartyName || "N/A"}</Text>
+                    </View>
+
+                    <View style={styles.metaRow}>
+                      <Icon name="calendar-range" size={16} color="#64748b" />
+                      <Text style={styles.metaLabel}>Submitted: </Text>
+                      <Text style={styles.metaValue}>
+                        {new Date(item.createdAt).toLocaleDateString(undefined, {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </Text>
+                    </View>
+                    
+                    {item.adminResponse ? (
+                      <View style={styles.adminNoteBox}>
+                        <View style={styles.adminNoteHeader}>
+                          <Icon name="shield-account-outline" size={16} color="#856404" />
+                          <Text style={styles.adminLabel}> Admin Remarks</Text>
+                        </View>
+                        <Text style={styles.adminNoteText}>{item.adminResponse}</Text>
                       </View>
-                      <Text style={styles.adminNoteText}>{item.adminResponse}</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.waitingContainer}>
-                      <Icon name="clock-outline" size={14} color="#94a3b8" />
-                      <Text style={styles.noResponse}> Awaiting admin response and investigation...</Text>
-                    </View>
-                  )}
+                    ) : (
+                      <View style={styles.waitingContainer}>
+                        <Icon name="clock-outline" size={14} color="#94a3b8" />
+                        <Text style={styles.noResponse}> Awaiting admin response and investigation...</Text>
+                      </View>
+                    )}
 
-                  {item.status === 'warned' && !item.warningAccepted && (
+                    {item.status === 'warned' && !item.warningAccepted && (
+                      <TouchableOpacity 
+                        style={styles.acknowledgeBtn} 
+                        onPress={() => handleAcknowledgeWarning(item._id)}
+                      >
+                        <Icon name="check-decagram" size={16} color="#fff" />
+                        <Text style={styles.acknowledgeBtnText}> Acknowledge Warning</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <View style={styles.cardFooter}>
                     <TouchableOpacity 
-                      style={styles.acknowledgeBtn} 
-                      onPress={() => handleAcknowledgeWarning(item._id)}
+                      style={styles.detailBtn} 
+                      onPress={() => isSelectionMode ? toggleSelection(item._id) : navigation.navigate('ComplaintDetails', { id: item._id })}
                     >
-                      <Icon name="check-decagram" size={16} color="#fff" />
-                      <Text style={styles.acknowledgeBtnText}> Acknowledge Warning</Text>
+                      <Text style={styles.detailBtnText}>View Details</Text>
+                      <Icon name="chevron-right" size={16} color="#fff" />
                     </TouchableOpacity>
-                  )}
+                  </View>
                 </View>
-
-                <View style={styles.cardFooter}>
-                  <TouchableOpacity 
-                    style={styles.detailBtn} 
-                    onPress={() => navigation.navigate('ComplaintDetails', { id: item._id })}
-                  >
-                    <Text style={styles.detailBtnText}>View Details</Text>
-                    <Icon name="chevron-right" size={16} color="#fff" />
-                  </TouchableOpacity>
-                </View>
-              </View>
+              </TouchableOpacity>
             );
           }}
           ListEmptyComponent={

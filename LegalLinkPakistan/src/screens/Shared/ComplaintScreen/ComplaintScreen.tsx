@@ -4,6 +4,8 @@ import {
   Alert, ActivityIndicator, StyleSheet, TextInput, ScrollView, Image, Platform
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Header from '../../../components/Common/Header';
+import { MyButton } from '../../../components/Common/MyButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 
@@ -128,12 +130,7 @@ const ComplaintScreen = ({ route, navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={24} color="#fff" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>File a Complaint</Text>
-      </View>
+      <Header title="File a Complaint" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Target User Profile Card */}
@@ -221,13 +218,15 @@ const ComplaintScreen = ({ route, navigation }: any) => {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity 
-          style={[styles.submitButton, (!complaintType || !detail) && styles.disabledBtn]} 
+        <MyButton 
+          title={loading ? "Submitting..." : "Submit Complaint"} 
           onPress={handleSubmit} 
           disabled={loading || !complaintType || !detail}
-        >
-          {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>Submit Complaint</Text>}
-        </TouchableOpacity>
+          style={[
+            { height: 52, borderRadius: 12, marginTop: 10 },
+            (!complaintType || !detail) && { backgroundColor: '#cbd5e1' }
+          ]}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -235,23 +234,6 @@ const ComplaintScreen = ({ route, navigation }: any) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f8f9fa' },
-  header: { 
-    backgroundColor: '#001a4d', 
-    paddingTop: Platform.OS === 'ios' ? 10 : 20, 
-    paddingBottom: 20,
-    paddingHorizontal: 20, 
-    flexDirection: 'row', 
-    alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 3,
-  },
-  backButton: {
-    padding: 4,
-  },
-  headerTitle: { color: '#fff', fontSize: 20, fontWeight: '700', marginLeft: 15 },
   content: { padding: 20 },
   sectionTitle: { fontSize: 13, fontWeight: '700', color: '#001a4d', marginTop: 15, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.5 },
   targetCardLoader: {

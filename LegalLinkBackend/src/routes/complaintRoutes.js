@@ -8,7 +8,8 @@ const {
     updateComplaintStatus,
     getMyComplaints,
     getComplaintById,
-    acknowledgeWarning
+    acknowledgeWarning,
+    deleteComplaint
 } = require('../controllers/complaintController');
 
 // Multer storage configuration for evidence uploads
@@ -48,5 +49,8 @@ router.get('/detail/:id', protect, getComplaintById);
 
 // 6. Acknowledge warning by target
 router.put('/acknowledge/:id', protect, acknowledgeWarning);
+
+// 7. Delete complaint
+router.delete('/delete/:id', protect, deleteComplaint);
 
 module.exports = router;
