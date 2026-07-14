@@ -14,37 +14,86 @@ const {
     getClientBookings,
     getLawyerWallet,
     completeAppointment,
-    deleteBooking
+    deleteBooking,
+    createInstantChatBooking
 } = require('../controllers/bookingController');
 
 const { protect } = require('../middlewares/authMiddleware'); 
 const Booking = require('../models/Booking');
+const PaymentHistory = require('../models/PaymentHistory');
 const { createAndSendNotification } = require('../services/notificationService');
 
 // ==========================================
 // CLIENT ROUTES
 // ==========================================
 router.post('/create', protect, createBooking);
+router.post('/create-instant-chat', protect, createInstantChatBooking);
 router.get('/my-bookings', protect, getClientBookings);
 router.delete('/delete/:bookingId', protect, deleteBooking);
 
-// ✅ FIX: Populate both lawyerId AND clientId
+// ✅ FIX: Populate both lawyerId AND clientId with full details
 router.get('/status/:bookingId', protect, async (req, res) => {
     try {
         const booking = await Booking.findById(req.params.bookingId)
-            .populate('lawyerId', 'name email phone address profilePicUri')
-            .populate('clientId', 'name profilePicUri');
+            .populate('lawyerId', 'name email phone address profilePicUri consultationFee')
+            .populate('clientId', 'name email phone address profilePicUri');
         
         if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+        let resolvedClient = booking.clientId;
+        if (!resolvedClient || !resolvedClient.name) {
+            const rawBooking = await Booking.findById(req.params.bookingId);
+            const targetClientId = rawBooking?.clientId || (booking.clientId?._id || booking.clientId);
+            if (targetClientId) {
+                const ClientModel = require('../models/Client');
+                const clientDoc = await ClientModel.findById(targetClientId).select('name email phone address profilePicUri');
+                if (clientDoc) {
+                    resolvedClient = {
+                        _id: clientDoc._id,
+                        name: clientDoc.name,
+                        email: clientDoc.email,
+                        phone: clientDoc.phone,
+                        address: clientDoc.address,
+                        profilePicUri: clientDoc.profilePicUri
+                    };
+                } else {
+                    const lawyerClient = await Lawyer.findById(targetClientId).select('name email phone address profilePicUri');
+                    if (lawyerClient) {
+                        resolvedClient = {
+                            _id: lawyerClient._id,
+                            name: lawyerClient.name,
+                            email: lawyerClient.email,
+                            phone: lawyerClient.phone,
+                            address: lawyerClient.address,
+                            profilePicUri: lawyerClient.profilePicUri
+                        };
+                    }
+                }
+            }
+        }
         
+        const formatAddress = (addr) => {
+            if (!addr) return "N/A";
+            if (typeof addr === 'string') return addr;
+            const parts = [addr.city, addr.district, addr.province].filter(p => p && p.trim() !== "");
+            return parts.length > 0 ? parts.join(", ") : "N/A";
+        };
+
         const bookingData = {
             ...booking._doc,
+            clientId: resolvedClient?._id || booking.clientId?._id || booking.clientId,
+            lawyerId: booking.lawyerId?._id || booking.lawyerId,
             lawyerName: booking.lawyerId?.name || "N/A",
             lawyerEmail: booking.lawyerId?.email || "N/A",
             lawyerPhone: booking.lawyerId?.phone || "N/A",
-            lawyerAddress: booking.lawyerId?.address || "N/A",
-            clientName: booking.clientId?.name || "N/A",
-            clientPic: booking.clientId?.profilePicUri || "",
+            lawyerAddress: formatAddress(booking.lawyerId?.address),
+            lawyerPic: booking.lawyerId?.profilePicUri ? booking.lawyerId.profilePicUri.replace(/\\/g, '/') : "",
+            lawyerFee: booking.lawyerId?.consultationFee || "1000",
+            clientName: resolvedClient?.name || booking.clientId?.name || "N/A",
+            clientEmail: resolvedClient?.email || booking.clientId?.email || "N/A",
+            clientPhone: resolvedClient?.phone || booking.clientId?.phone || "N/A",
+            clientAddress: formatAddress(resolvedClient?.address || booking.clientId?.address),
+            clientPic: (resolvedClient?.profilePicUri || booking.clientId?.profilePicUri) ? (resolvedClient?.profilePicUri || booking.clientId.profilePicUri).replace(/\\/g, '/') : "",
             review: booking.review || null
         };
 
@@ -95,13 +144,29 @@ router.get('/verify-access/:bookingId', protect, async (req, res) => {
 router.post('/payment/intent', protect, async (req, res) => {
     try {
         const { amount, bookingId } = req.body;
+        
+        let finalAmountInCents = amount;
+        
+        if (!finalAmountInCents && bookingId) {
+            const booking = await Booking.findById(bookingId).populate('lawyerId');
+            if (booking && booking.lawyerId) {
+                const feeAmount = parseInt(booking.lawyerId.consultationFee, 10) || 1000;
+                finalAmountInCents = feeAmount * 100;
+            }
+        }
+        
+        if (!finalAmountInCents) {
+            finalAmountInCents = 250000; // Default fallback to PKR 2500 in cents
+        }
+
         const paymentIntent = await stripe.paymentIntents.create({
-            amount: amount, 
+            amount: finalAmountInCents, 
             currency: 'pkr',
             metadata: { bookingId }
         });
         res.status(200).json({ success: true, clientSecret: paymentIntent.client_secret });
     } catch (error) {
+        console.error("Payment Intent Error:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 });
@@ -113,18 +178,32 @@ router.put('/confirm-payment/:bookingId', protect, async (req, res) => {
             bookingId, 
             { status: 'confirmed', paymentStatus: 'paid' }, 
             { new: true }
-        ).populate('clientId', 'name').populate('lawyerId', 'name');
+        ).populate('clientId', 'name').populate('lawyerId', 'name consultationFee');
         
         if (!updatedBooking) return res.status(404).json({ success: false, message: "Booking not found" });
 
         const clientName = updatedBooking.clientId?.name || "Client";
         const lawyerName = updatedBooking.lawyerId?.name || "Legal Consultant";
+        const feeAmount = parseInt(updatedBooking.lawyerId?.consultationFee, 10) || 1000;
+
+        // Update amountPaid on the booking
+        updatedBooking.amountPaid = feeAmount;
+        await updatedBooking.save();
+
+        // Create PaymentHistory record for the lawyer's wallet
+        await PaymentHistory.create({
+            bookingId: updatedBooking._id,
+            lawyerId: updatedBooking.lawyerId._id,
+            clientId: updatedBooking.clientId._id,
+            amount: feeAmount,
+            paymentIntentId: updatedBooking.stripePaymentIntentId || 'stripe_payment_success'
+        });
 
         // Notify Lawyer
         await createAndSendNotification(
           updatedBooking.lawyerId._id || updatedBooking.lawyerId,
           "Payment Confirmed",
-          `Payment of PKR 2500 confirmed for ${clientName}'s appointment. Your consultation is now active.`,
+          `Payment of PKR ${feeAmount} confirmed for ${clientName}'s appointment. Your consultation is now active.`,
           "booking",
           { bookingId: updatedBooking._id }
         );
@@ -133,13 +212,14 @@ router.put('/confirm-payment/:bookingId', protect, async (req, res) => {
         await createAndSendNotification(
           updatedBooking.clientId._id || updatedBooking.clientId,
           "Booking Confirmed",
-          `Your payment was successful! Your consultation with ${lawyerName} is confirmed.`,
+          `Your payment of PKR ${feeAmount} was successful! Your consultation with ${lawyerName} is confirmed.`,
           "booking",
           { bookingId: updatedBooking._id }
         );
         
         res.status(200).json({ success: true, booking: updatedBooking });
     } catch (error) {
+        console.error("Confirm Payment Route Error:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 });

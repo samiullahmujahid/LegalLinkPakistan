@@ -75,16 +75,34 @@ export const ProfileScreen = ({ navigation }: any) => {
           setLoading(false);
           return;
         }
-        Alert.alert("Error", "User details not found. Please login again.");
-        handleLogout();
+        Alert.alert("Session Expired", "User details not found. Please login again.");
+        await AsyncStorage.multiRemove(['userToken', 'token', 'user', 'adminToken', 'userId', 'userRole', 'userEmail']);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'RoleSelection' }],
+        });
         return;
       }
 
       const userObj = JSON.parse(userStr);
       const uId = userObj.id || userObj._id;
-      setUserId(uId);
       const uRole = userObj.role || 'Client';
-      setRole(uRole);
+      
+      if (!uId || uId === 'undefined') {
+        Alert.alert("Session Expired", "Invalid user credentials. Please login again.");
+        await AsyncStorage.multiRemove(['userToken', 'token', 'user', 'adminToken', 'userId', 'userRole', 'userEmail']);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'RoleSelection' }],
+        });
+        return;
+      }
+
+      setUserId(uId);
+      let normalizedRole: 'Client' | 'Lawyer' | 'Admin' = 'Client';
+      if (uRole.toLowerCase() === 'lawyer') normalizedRole = 'Lawyer';
+      else if (uRole.toLowerCase() === 'admin') normalizedRole = 'Admin';
+      setRole(normalizedRole);
 
       const token = await AsyncStorage.getItem('userToken');
       const cleanToken = token ? token.replace(/['"]+/g, '') : '';
@@ -104,14 +122,14 @@ export const ProfileScreen = ({ navigation }: any) => {
         }
         setProfilePic(pic);
 
-        if (uRole === 'Client') {
-          setCity(data.address?.city || '');
-          setDistrict(data.address?.district || '');
-          setProvince(data.address?.province || '');
-        } else if (uRole === 'Lawyer') {
-          setCity(data.city || '');
-          setDistrict(data.district || '');
-          setProvince(data.province || '');
+        if (normalizedRole === 'Client') {
+          setCity(data.address?.city || data.city || '');
+          setDistrict(data.address?.district || data.district || '');
+          setProvince(data.address?.province || data.province || '');
+        } else if (normalizedRole === 'Lawyer') {
+          setCity(data.city || data.address?.city || '');
+          setDistrict(data.district || data.address?.district || '');
+          setProvince(data.province || data.address?.province || '');
           setBarCouncil(data.barCouncil || '');
           setLicenseNumber(data.licenseNumber || '');
           setCourtLevel(data.courtLevel || 'Lower Court');

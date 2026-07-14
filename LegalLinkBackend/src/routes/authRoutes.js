@@ -1,16 +1,40 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 const Client = require('../models/Client');
 const Lawyer = require('../models/Lawyer');
 const Admin = require('../models/Admin');
 const { protect } = require('../middlewares/authMiddleware');
 const authController = require('../controllers/authController');
 
+const multer = require('multer');
+const fs = require('fs');
+
+// Ensure uploads/profile directory exists
+if (!fs.existsSync('uploads/profile')) {
+  fs.mkdirSync('uploads/profile', { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, 'uploads/profile');
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ storage });
+const uploadFields = upload.fields([
+  { name: 'profilePic', maxCount: 1 },
+  { name: 'licensePic', maxCount: 1 }
+]);
+
 // ==========================================
 // CONTROLLER-BASED ROUTES
 // ==========================================
-router.post('/register', authController.registerUser);
+router.post('/register', uploadFields, authController.registerUser);
 router.post('/login', authController.loginUser);
 router.post('/verify-otp', authController.verifyAdminOTP);
 router.get('/lawyers', authController.getAllLawyers);
@@ -70,6 +94,9 @@ router.post('/register-lawyer', async (req, res) => {
 // Fetch Specific Lawyer Profile
 router.get('/lawyer-profile/:id', async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
         const lawyer = await Lawyer.findById(req.params.id).select('-password');
         if (!lawyer) return res.status(404).json({ message: "Lawyer not found" });
         res.status(200).json(lawyer);
@@ -81,6 +108,9 @@ router.get('/lawyer-profile/:id', async (req, res) => {
 // NEW: Fetch Generic Profile (Lawyer or Client)
 router.get('/profile/:id', async (req, res) => {
     try {
+        if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+            return res.status(400).json({ message: "Invalid ID format" });
+        }
         const lawyer = await Lawyer.findById(req.params.id).select('-password');
         if (lawyer) return res.status(200).json(lawyer);
         

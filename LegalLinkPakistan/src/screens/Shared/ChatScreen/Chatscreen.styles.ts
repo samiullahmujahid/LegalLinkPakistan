@@ -3,7 +3,7 @@ import { StyleSheet, Platform } from 'react-native';
 export const chatStyles = StyleSheet.create({
   container: { 
     flex: 1, 
-    backgroundColor: '#efeae2' // Classic WhatsApp chat wallpaper color
+    backgroundColor: '#f0f4fa' // Soft brand blue-gray tint
   },
   header: {
     backgroundColor: '#001a4d', // Brand color
@@ -98,7 +98,7 @@ export const chatStyles = StyleSheet.create({
     shadowRadius: 1,
   },
   myMsg: { 
-    backgroundColor: '#dcf8c6', // WhatsApp light green
+    backgroundColor: '#e1eafd', // Soft brand light blue
     alignSelf: 'flex-end', 
     borderTopRightRadius: 2,
   },
@@ -108,7 +108,7 @@ export const chatStyles = StyleSheet.create({
     borderTopLeftRadius: 2,
   },
   myMsgText: { 
-    color: '#111', 
+    color: '#001a4d', // Brand dark navy text
     fontSize: 15.5,
     lineHeight: 21
   },

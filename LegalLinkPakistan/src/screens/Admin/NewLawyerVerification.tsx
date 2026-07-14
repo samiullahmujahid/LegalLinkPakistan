@@ -53,7 +53,7 @@ const NewLawyerVerification = ({ navigation }: any) => {
       if (rawPath.startsWith('http://') || rawPath.startsWith('https://') || rawPath.startsWith('data:')) {
         finalProfilePicUri = rawPath;
       } else {
-        finalProfilePicUri = `https://mug-work-public.ngrok-free.dev/${rawPath.replace(/^\//, '')}`;
+        finalProfilePicUri = `https://mug-work-public.ngrok-free.dev/${rawPath.replace(/^\//, '').replace(/\\/g, '/')}`;
       }
     }
 

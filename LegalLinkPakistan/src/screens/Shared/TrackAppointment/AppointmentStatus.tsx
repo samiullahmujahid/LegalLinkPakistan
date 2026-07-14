@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, Text, SafeAreaView, StyleSheet, TouchableOpacity, 
+import {
+  View, Text, SafeAreaView, StyleSheet, TouchableOpacity,
   ActivityIndicator, ScrollView, Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -15,7 +15,7 @@ import { MyButton } from '../../../components/Common/MyButton';
 const parseScheduledDateTime = (dateStr: string, timeStr: string): Date | null => {
   try {
     if (!dateStr || !timeStr) return null;
-    
+
     // Normalize date: supports DD/MM/YYYY, DD-MM-YYYY, or YYYY-MM-DD
     const dateParts = dateStr.split(/[-/]/);
     let day = 0, month = 0, year = 0;
@@ -58,9 +58,9 @@ const parseScheduledDateTime = (dateStr: string, timeStr: string): Date | null =
 };
 
 const AppointmentStatus = ({ route, navigation }: any) => {
-  const { bookingId, role = 'client' } = route.params || {}; 
+  const { bookingId, role = 'client' } = route.params || {};
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
-  
+
   const [loading, setLoading] = useState(true);
   const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -140,11 +140,11 @@ const AppointmentStatus = ({ route, navigation }: any) => {
             const hours = Math.floor(diff / 3600000);
             const minutes = Math.floor((diff % 3600000) / 60000);
             const seconds = Math.floor((diff % 60000) / 1000);
-            
+
             let countdownStr = '';
             if (hours > 0) countdownStr += `${hours}h `;
             countdownStr += `${minutes.toString().padStart(2, '0')}m ${seconds.toString().padStart(2, '0')}s`;
-            
+
             setStartCountdown(countdownStr);
             setIsChatEnabled(false);
           } else {
@@ -171,18 +171,22 @@ const AppointmentStatus = ({ route, navigation }: any) => {
     setIsProcessingPayment(true);
     try {
       const config = await getRequestConfig();
+
+      // Calculate dynamic amount based on lawyer's fee (fallback to PKR 1000)
+      const fee = bookingDetails?.lawyerFee ? parseInt(bookingDetails.lawyerFee, 10) : 1000;
+
       const response = await axios.post(`${BASE_URL}/api/bookings/payment/intent`, {
-        amount: 250000,
+        amount: fee * 100, // Stripe expects cents/smallest unit
         bookingId: bookingId
       }, config);
-      
+
       const { clientSecret } = response.data;
       const { error: initError } = await initPaymentSheet({
         paymentIntentClientSecret: clientSecret,
         merchantDisplayName: 'Legal Link Pakistan',
         billingDetailsCollectionConfiguration: {
-            address: 'never' as any,
-            phone: 'never' as any,
+          address: 'never' as any,
+          phone: 'never' as any,
         },
       });
 
@@ -208,17 +212,19 @@ const AppointmentStatus = ({ route, navigation }: any) => {
   const handleCancelAppointment = async () => {
     Alert.alert("Cancel Appointment", "Are you sure you want to cancel this booking?", [
       { text: "No" },
-      { text: "Yes", onPress: async () => {
-        try {
-          const config = await getRequestConfig();
-          await axios.put(`${BASE_URL}/api/bookings/cancel/${bookingId}`, {}, config);
-          setBookingDetails((prev: any) => ({ ...prev, status: 'rejected' }));
-          Alert.alert("Cancelled", "Appointment has been cancelled.");
-          navigation.goBack();
-        } catch (error) {
-          Alert.alert("Error", "Could not cancel appointment.");
+      {
+        text: "Yes", onPress: async () => {
+          try {
+            const config = await getRequestConfig();
+            await axios.put(`${BASE_URL}/api/bookings/cancel/${bookingId}`, {}, config);
+            setBookingDetails((prev: any) => ({ ...prev, status: 'rejected' }));
+            Alert.alert("Cancelled", "Appointment has been cancelled.");
+            navigation.goBack();
+          } catch (error) {
+            Alert.alert("Error", "Could not cancel appointment.");
+          }
         }
-      }}
+      }
     ]);
   };
 
@@ -233,7 +239,7 @@ const AppointmentStatus = ({ route, navigation }: any) => {
   const currentStatus = bookingDetails?.status || 'pending';
   const displayDate = bookingDetails?.scheduledDate || "Pending...";
   const displayTime = bookingDetails?.scheduledTime || "Pending...";
-  
+
   const lawyerName = bookingDetails?.lawyerName || "Consultant";
   const clientName = bookingDetails?.clientName || "Client";
   const caseType = bookingDetails?.caseCategory || "General";
@@ -243,13 +249,13 @@ const AppointmentStatus = ({ route, navigation }: any) => {
     <SafeAreaView style={[styles.container, { backgroundColor: COLORS.lightBg }]}>
       <Header title="Appointment Status" />
       <ScrollView contentContainerStyle={styles.content}>
-        
+
         {/* Status Card Wrapper */}
         <View style={styles.statusCard}>
-          <Icon 
-            name={currentStatus === 'rejected' ? "close-circle" : currentStatus === 'confirmed' ? "check-circle" : "clock-outline"} 
-            size={72} 
-            color={currentStatus === 'rejected' ? COLORS.danger : currentStatus === 'confirmed' ? COLORS.info : COLORS.warning} 
+          <Icon
+            name={currentStatus === 'rejected' ? "close-circle" : currentStatus === 'confirmed' ? "check-circle" : "clock-outline"}
+            size={72}
+            color={currentStatus === 'rejected' ? COLORS.danger : currentStatus === 'confirmed' ? COLORS.info : COLORS.warning}
           />
           <Text style={styles.statusHeading}>{currentStatus.toUpperCase()}</Text>
         </View>
@@ -265,16 +271,16 @@ const AppointmentStatus = ({ route, navigation }: any) => {
                 </Text>
               </View>
             ) : (
-              <MyButton 
-                title={`Pay Consultation Fee ${paymentCountdown ? `(Due: ${paymentCountdown})` : ''}`}
-                onPress={handleStripePayment} 
+              <MyButton
+                title={`Pay Consultation Fee: PKR ${bookingDetails?.lawyerFee || '1000'} ${paymentCountdown ? `(Due: ${paymentCountdown})` : ''}`}
+                onPress={handleStripePayment}
                 disabled={isProcessingPayment}
                 style={{ backgroundColor: COLORS.success, height: 50, marginTop: 0 }}
               />
             )}
           </View>
         )}
-        
+
         {/* Accepted & Awaiting Lawyer View */}
         {currentStatus === 'accepted' && role === 'lawyer' && (
           <View style={[styles.infoBox, { borderLeftWidth: 4, borderLeftColor: COLORS.warning }]}>
@@ -287,9 +293,9 @@ const AppointmentStatus = ({ route, navigation }: any) => {
         {/* Confirmed Slot Timer & Dynamic Button */}
         {currentStatus === 'confirmed' && (
           <View style={{ width: '100%', marginBottom: 10 }}>
-            
+
             {/* Live slot status banner */}
-            <View style={[styles.infoBox, { alignItems: 'center', borderLeftWidth: 4, borderLeftColor: isChatEnabled ? COLORS.success : COLORS.info }]}>
+            <View style={[styles.infoBox, { alignItems: 'center' }]}>
               <Icon name={isChatEnabled ? "chat-processing-outline" : "clock-fast"} size={28} color={isChatEnabled ? COLORS.success : COLORS.info} />
               <Text style={{ fontSize: 14, fontWeight: 'bold', color: COLORS.primary, marginTop: 6 }}>
                 {isChatEnabled ? 'Your consultation is active!' : 'Appointment Starts In:'}
@@ -299,7 +305,7 @@ const AppointmentStatus = ({ route, navigation }: any) => {
               </Text>
             </View>
 
-            <MyButton 
+            <MyButton
               title={isChatEnabled ? 'Go to Chat' : 'Go to Chat (Locked)'}
               onPress={() => navigation.navigate('ChatsScreen', { bookingId: bookingId })}
               disabled={!isChatEnabled}
@@ -314,8 +320,8 @@ const AppointmentStatus = ({ route, navigation }: any) => {
         {/* Cancel Button */}
         {currentStatus !== 'rejected' && currentStatus !== 'completed' && currentStatus !== 'confirmed' && !paymentExpired && (
           <View style={{ width: '100%', marginBottom: 10 }}>
-            <MyButton 
-              title="Cancel Appointment" 
+            <MyButton
+              title="Cancel Appointment"
               onPress={handleCancelAppointment}
               style={{ backgroundColor: COLORS.danger, height: 50, marginTop: 0 }}
             />
@@ -326,7 +332,7 @@ const AppointmentStatus = ({ route, navigation }: any) => {
         <View style={styles.infoBox}>
           <Text style={styles.infoTitle}>Appointment Details</Text>
           <View style={styles.row}><Text style={styles.label}>Booking ID:</Text><Text style={styles.value}>{bookingId.slice(-8)}</Text></View>
-          
+
           <View style={styles.row}>
             <Text style={styles.label}>{role === 'lawyer' ? 'Client Name:' : 'Lawyer Name:'}</Text>
             <Text style={styles.value}>{role === 'lawyer' ? clientName : lawyerName}</Text>
@@ -339,8 +345,8 @@ const AppointmentStatus = ({ route, navigation }: any) => {
         </View>
 
         <View style={{ width: '100%', marginTop: 10 }}>
-          <MyButton 
-            title="Back to Dashboard" 
+          <MyButton
+            title="Back to Dashboard"
             onPress={() => navigation.goBack()}
             style={{ backgroundColor: COLORS.primary, height: 50, marginTop: 0 }}
           />

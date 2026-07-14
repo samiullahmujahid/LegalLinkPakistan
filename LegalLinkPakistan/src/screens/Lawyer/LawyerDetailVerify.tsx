@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Styles Import (Rasta sahi check kar lijiye ga)
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
@@ -19,7 +20,12 @@ const LawyerDetailVerify = ({ route, navigation }: any) => {
   useEffect(() => {
     const fetchDetails = async () => {
       try {
-        const response = await axios.get(`https://mug-work-public.ngrok-free.dev/api/admin/pending-lawyers`);
+        const token = await AsyncStorage.getItem('adminToken');
+        const response = await axios.get(`https://mug-work-public.ngrok-free.dev/api/admin/pending-lawyers`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
         const found = response.data.lawyers.find((l: any) => l._id === lawyerId);
         setLawyer(found);
       } catch (err) {
@@ -39,10 +45,15 @@ const LawyerDetailVerify = ({ route, navigation }: any) => {
 
     setActionLoading(true);
     try {
+      const token = await AsyncStorage.getItem('adminToken');
       const response = await axios.post("https://mug-work-public.ngrok-free.dev/api/admin/update-status", {
         id: lawyerId,
         status,
         reason
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
 
       if (response.data.success) {
@@ -80,7 +91,7 @@ const LawyerDetailVerify = ({ route, navigation }: any) => {
               source={{ 
                 uri: lawyer.licensePicUri.startsWith('http://') || lawyer.licensePicUri.startsWith('https://') || lawyer.licensePicUri.startsWith('data:')
                   ? lawyer.licensePicUri
-                  : `https://mug-work-public.ngrok-free.dev/${lawyer.licensePicUri.replace(/^\//, '')}`
+                  : `https://mug-work-public.ngrok-free.dev/${lawyer.licensePicUri.replace(/^\//, '').replace(/\\/g, '/')}`
               }} 
               style={s.licenseImg} 
               resizeMode="contain"

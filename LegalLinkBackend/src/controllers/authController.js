@@ -22,6 +22,33 @@ const generateToken = (id, role) => {
     );
 };
 
+const saveBase64Image = (base64Str, prefix) => {
+    if (!base64Str || !base64Str.startsWith('data:')) return "";
+    try {
+        const matches = base64Str.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (!matches || matches.length !== 3) return "";
+        const ext = matches[1].split('/')[1] || 'jpg';
+        const buffer = Buffer.from(matches[2], 'base64');
+        const filename = `${prefix}-${Date.now()}.${ext}`;
+        const relativePath = `uploads/profile/${filename}`;
+        
+        const path = require('path');
+        const fs = require('fs');
+        const absolutePath = path.join(__dirname, '../../', relativePath);
+        
+        const dir = path.dirname(absolutePath);
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+        
+        fs.writeFileSync(absolutePath, buffer);
+        return relativePath;
+    } catch (err) {
+        console.error("Base64 Save Error:", err);
+        return "";
+    }
+};
+
 // ==========================================
 // 1. USER REGISTRATION (WITH DYNAMIC MULTIPART FILE CAPTURE)
 // ==========================================
@@ -70,18 +97,49 @@ exports.registerUser = async (req, res) => {
                 isApproved: false,
                 profilePicUri: "",
                 licensePicUri: "",
-                licenseExpiry: req.body.licenseExpiry || ""
+                licenseExpiry: req.body.licenseExpiry || "",
+                courtLevel: req.body.profCourtLevel || req.body.courtLevel || "",
+                experience: req.body.experience || "0"
             };
+
+            if (req.body.areasOfPractice) {
+                try {
+                    lawyerData.areasOfPractice = typeof req.body.areasOfPractice === 'string'
+                        ? JSON.parse(req.body.areasOfPractice)
+                        : req.body.areasOfPractice;
+                } catch (e) {
+                    console.log("Error parsing areasOfPractice:", e);
+                    lawyerData.areasOfPractice = [req.body.areasOfPractice];
+                }
+            }
+
+            if (req.body.profilePicBase64) {
+                const filePath = saveBase64Image(req.body.profilePicBase64, 'profile');
+                if (filePath) {
+                    lawyerData.profilePic = filePath;
+                    lawyerData.profilePicUri = filePath;
+                }
+            }
+            if (req.body.licensePicBase64) {
+                const filePath = saveBase64Image(req.body.licensePicBase64, 'license');
+                if (filePath) {
+                    lawyerData.licensePicUri = filePath;
+                }
+            }
 
             if (req.files) {
                 if (req.files['profilePic'] && req.files['profilePic'][0]) {
-                    lawyerData.profilePicUri = req.files['profilePic'][0].path.replace(/\\/g, '/');
+                    const filePath = req.files['profilePic'][0].path.replace(/\\/g, '/');
+                    lawyerData.profilePic = filePath;
+                    lawyerData.profilePicUri = filePath;
                 }
                 if (req.files['licensePic'] && req.files['licensePic'][0]) {
                     lawyerData.licensePicUri = req.files['licensePic'][0].path.replace(/\\/g, '/');
                 }
             } else if (req.file) {
-                lawyerData.profilePicUri = req.file.path.replace(/\\/g, '/');
+                const filePath = req.file.path.replace(/\\/g, '/');
+                lawyerData.profilePic = filePath;
+                lawyerData.profilePicUri = filePath;
             }
 
             if (!lawyerData.profilePicUri && req.body.profilePicUri) {

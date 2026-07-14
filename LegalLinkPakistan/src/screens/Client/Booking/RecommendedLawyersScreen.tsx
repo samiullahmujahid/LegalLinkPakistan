@@ -30,8 +30,21 @@ export const RecommendedLawyersScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [clientCity, setClientCity] = useState('');
+  const [currentUserRole, setCurrentUserRole] = useState('client');
 
   useEffect(() => {
+    const loadUserRole = async () => {
+      try {
+        const userStr = await AsyncStorage.getItem('user');
+        if (userStr) {
+          const userObj = JSON.parse(userStr);
+          setCurrentUserRole(userObj.role?.toLowerCase() || 'client');
+        }
+      } catch (e) {
+        console.log("Error loading user role in RecommendedLawyers:", e);
+      }
+    };
+    loadUserRole();
     fetchLawyers();
   }, []);
 
@@ -55,6 +68,52 @@ export const RecommendedLawyersScreen = ({ navigation }: any) => {
       }
     } catch (error) {
       console.log("[RecommendedLawyers] Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInstantChat = async (targetLawyer: Lawyer) => {
+    try {
+      setLoading(true);
+      const token = await AsyncStorage.getItem('userToken');
+      const cleanToken = token ? token.replace(/['"]+/g, '') : '';
+
+      const response = await axios.post(
+        `${API_BASE}/bookings/create-instant-chat`,
+        { targetLawyerId: targetLawyer._id },
+        {
+          headers: {
+            Authorization: `Bearer ${cleanToken}`,
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      if (response.data.success) {
+        const booking = response.data.booking;
+        
+        let profilePic = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
+        const rawPath = targetLawyer.profilePic || targetLawyer.profilePicUri;
+        if (rawPath) {
+          if (rawPath.startsWith('http://') || rawPath.startsWith('https://') || rawPath.startsWith('data:')) {
+            profilePic = rawPath;
+          } else {
+            profilePic = `${API_BASE.replace('/api', '')}/${rawPath.replace(/^\//, '').replace(/\\/g, '/')}`;
+          }
+        }
+
+        navigation.navigate('ChatsScreen', {
+          bookingId: booking._id,
+          partnerName: targetLawyer.name,
+          partnerPic: profilePic
+        });
+      } else {
+        Alert.alert("Chat Connection Error", response.data.message || "Failed to establish chat channel.");
+      }
+    } catch (e: any) {
+      console.log("Instant Chat Error:", e);
+      Alert.alert("Chat Connection Error", e.response?.data?.message || "Failed to connect to lawyer.");
     } finally {
       setLoading(false);
     }
@@ -142,7 +201,13 @@ export const RecommendedLawyersScreen = ({ navigation }: any) => {
             return (
               <TouchableOpacity 
                 style={styles.card}
-                onPress={() => navigation.navigate('LawyerProfile', { lawyerId: item._id })}
+                onPress={() => {
+                  if (currentUserRole === 'lawyer') {
+                    navigation.navigate('LawyerProfile', { lawyerId: item._id, viewOnly: true });
+                  } else {
+                    navigation.navigate('LawyerProfile', { lawyerId: item._id });
+                  }
+                }}
                 activeOpacity={0.8}
               >
                 {/* Lawyer Image */}
@@ -199,6 +264,39 @@ export const RecommendedLawyersScreen = ({ navigation }: any) => {
                       PKR {parseInt(item.consultationFee || '1000').toLocaleString()}
                     </Text>
                   </View>
+
+                  {currentUserRole === 'lawyer' && (
+                    <View style={{ flexDirection: 'row', marginTop: 10, justifyContent: 'space-between' }}>
+                      <TouchableOpacity 
+                        style={{
+                          backgroundColor: '#f1f5f9',
+                          paddingVertical: 6,
+                          paddingHorizontal: 12,
+                          borderRadius: 6,
+                          borderWidth: 1,
+                          borderColor: '#cbd5e1',
+                          flex: 0.48,
+                          alignItems: 'center'
+                        }}
+                        onPress={() => navigation.navigate('LawyerProfile', { lawyerId: item._id, viewOnly: true })}
+                      >
+                        <Text style={{ fontSize: 12, color: '#334155', fontWeight: 'bold' }}>Check Details</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity 
+                        style={{
+                          backgroundColor: '#001a4d',
+                          paddingVertical: 6,
+                          paddingHorizontal: 12,
+                          borderRadius: 6,
+                          flex: 0.48,
+                          alignItems: 'center'
+                        }}
+                        onPress={() => handleInstantChat(item)}
+                      >
+                        <Text style={{ fontSize: 12, color: '#fff', fontWeight: 'bold' }}>Chat</Text>
+                      </TouchableOpacity>
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             );

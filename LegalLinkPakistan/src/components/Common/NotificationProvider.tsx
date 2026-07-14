@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions, AppState, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions, AppState, SafeAreaView, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import socket from '../../socket';
@@ -165,15 +165,34 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     }
   };
 
-  const handleNotificationRedirect = (data: any) => {
+  const handleNotificationRedirect = async (data: any, explicitType?: string) => {
     if (!data) return;
-    const { type, bookingId, complaintId, id } = data;
+    const type = data.type || explicitType;
+    const { bookingId, complaintId, id } = data;
     console.log(`[NotificationProvider] Redirecting for type: ${type}`, data);
 
     if (navigationRef.isReady()) {
       if (type === 'chat' && bookingId) {
         navigationRef.navigate('ChatsScreen', { bookingId });
       } else if (type === 'booking' && bookingId) {
+        if (userRole?.toLowerCase() === 'lawyer') {
+          try {
+            let token = await AsyncStorage.getItem('userToken') || await AsyncStorage.getItem('token');
+            token = token?.trim().replace(/^["']|["']$/g, '') || '';
+            const res = await axios.get(`https://mug-work-public.ngrok-free.dev/api/bookings/status/${bookingId}`, {
+              headers: { Authorization: `Bearer ${token}`, 'ngrok-skip-browser-warning': 'true' }
+            });
+            if (res.data?.success) {
+              const booking = res.data.booking;
+              if (booking.status === 'pending') {
+                navigationRef.navigate('RequestDetails', { bookingId, requestData: booking });
+                return;
+              }
+            }
+          } catch (e) {
+            console.log("Error checking booking status on redirect:", e);
+          }
+        }
         navigationRef.navigate('AppointmentStatus', { bookingId, role: userRole?.toLowerCase() === 'lawyer' ? 'lawyer' : 'client' });
       } else if (type === 'complaint') {
         const targetId = complaintId || id;
@@ -193,7 +212,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (toastTimeoutRef.current) {
       clearTimeout(toastTimeoutRef.current);
     }
-    
+
     setCurrentToast(notification);
 
     // Slide down animation
@@ -223,7 +242,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const handleToastPress = () => {
     if (currentToast) {
       markAsRead(currentToast._id);
-      handleNotificationRedirect(currentToast.data);
+      handleNotificationRedirect(currentToast.data, currentToast.type);
       dismissToast();
     }
   };
@@ -263,7 +282,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const handleNewNotification = async (notification: any) => {
       console.log('[NotificationProvider] Received notification event:', notification);
-      
+
       // Append new notification to feed state
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
@@ -288,7 +307,45 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     };
 
+    const handleIncomingCall = (data: any) => {
+      console.log('[NotificationProvider] Received global incomingCall:', data);
+
+      Alert.alert(
+        "Incoming Call",
+        `Incoming ${data.isVideo ? 'Video' : 'Voice'} Call from ${data.callerName || 'Legal Partner'}...`,
+        [
+          {
+            text: "Decline",
+            onPress: () => {
+              socket.emit('callLog', { bookingId: data.bookingId, message: 'Call declined' });
+            },
+            style: "cancel"
+          },
+          {
+            text: "Accept",
+            onPress: () => {
+              if (navigationRef.isReady()) {
+                navigationRef.navigate('CallScreen', {
+                  socket,
+                  bookingId: data.bookingId,
+                  partnerId: data.callerId,
+                  partnerName: data.callerName || 'Legal Partner',
+                  partnerPic: data.callerPic || '',
+                  isCaller: false,
+                  isVideo: data.isVideo,
+                  incomingSignal: data.signal,
+                  callerSocketId: data.from
+                });
+              }
+            }
+          }
+        ],
+        { cancelable: false }
+      );
+    };
+
     socket.on('newNotification', handleNewNotification);
+    socket.on('incomingCall', handleIncomingCall);
 
     // Register Notifee background event click actions
     NotificationService.registerBackgroundHandler((data) => {
@@ -302,6 +359,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     return () => {
       socket.off('newNotification', handleNewNotification);
+      socket.off('incomingCall', handleIncomingCall);
       unsubscribeForeground();
     };
   }, [userId, userRole]);
@@ -349,19 +407,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       {/* Floating Animated In-App Notification Toast */}
       {currentToast && (
         <Animated.View style={[
-          styles.toastContainer, 
+          styles.toastContainer,
           { transform: [{ translateY: slideAnim }] }
         ]}>
-          <TouchableOpacity 
-            style={styles.toastContent} 
-            onPress={handleToastPress} 
+          <TouchableOpacity
+            style={styles.toastContent}
+            onPress={handleToastPress}
             activeOpacity={0.9}
           >
             <View style={[styles.iconBadge, { backgroundColor: getNotificationColor(currentToast.type) + '20' }]}>
-              <Icon 
-                name={getNotificationIcon(currentToast.type)} 
-                size={26} 
-                color={getNotificationColor(currentToast.type)} 
+              <Icon
+                name={getNotificationIcon(currentToast.type)}
+                size={26}
+                color={getNotificationColor(currentToast.type)}
               />
             </View>
             <View style={styles.textContainer}>

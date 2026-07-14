@@ -7,6 +7,7 @@ import { LocationSelector } from '../../../components/Common/LocationSelector';
 import { MyInput } from '../../../components/Common/MyInput';
 import { MyButton } from '../../../components/Common/MyButton';
 import { globalStyles } from '../../../theme/globalStyles';
+import Header from '../../../components/Common/Header';
 
 const ClientSignup: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [formData, setFormData] = useState({
@@ -52,6 +53,7 @@ const ClientSignup: React.FC<{ navigation: any }> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={globalStyles.container}>
+      <Header title="Client Registration" showBackButton={true} />
       <KeyboardAvoidingView 
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
         style={{ flex: 1 }}

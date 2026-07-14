@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, StatusBar, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Image, StatusBar, TextInput, Alert } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
@@ -12,6 +12,54 @@ const ChatsListScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedChatId, setSelectedChatId] = useState<string | null>(null);
+  const [lastReadMap, setLastReadMap] = useState<{[bookingId: string]: string}>({});
+
+  const loadLastReadStatus = async (chatList: any[]) => {
+    try {
+      const keys = chatList.map(c => `lastRead_${c._id}`);
+      if (keys.length === 0) return;
+      const pairs = await AsyncStorage.multiGet(keys);
+      const map: any = {};
+      pairs.forEach(([key, val]) => {
+        const bId = key.replace('lastRead_', '');
+        if (val) {
+          map[bId] = val;
+        }
+      });
+      setLastReadMap(map);
+    } catch (e) {
+      console.log("Error loading last read statuses:", e);
+    }
+  };
+
+  const deleteSelectedChat = () => {
+    if (!selectedChatId) return;
+    Alert.alert(
+      "Delete Chat",
+      "Are you sure you want to delete this chat? This will clear all messages and hide the chat for you.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: async () => {
+          try {
+            setLoading(true);
+            const token = await AsyncStorage.getItem('userToken');
+            await axios.delete(`https://mug-work-public.ngrok-free.dev/api/chat/chat/${selectedChatId}`, {
+              headers: { Authorization: `Bearer ${token?.replace(/['"]+/g, '')}` }
+            });
+            setSelectedChatId(null);
+            if (currentUser?.id) {
+              fetchChatList(currentUser.id);
+            }
+          } catch (error) {
+            console.error("Delete Chat Error:", error);
+            Alert.alert("Error", "Could not delete chat.");
+            setLoading(false);
+          }
+        }}
+      ]
+    );
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -41,6 +89,7 @@ const ChatsListScreen = ({ navigation }: any) => {
 
       if (response.data.success) {
         setChats(response.data.chats);
+        loadLastReadStatus(response.data.chats);
       }
     } catch (error) {
       console.error("Error fetching chat list:", error);
@@ -82,8 +131,22 @@ const ChatsListScreen = ({ navigation }: any) => {
       <StatusBar backgroundColor="#001a4d" barStyle="light-content" />
       
       <Header 
-        title="Chats" 
-        showBackButton={false} 
+        title={selectedChatId ? "1 Chat Selected" : "Chats"} 
+        showBackButton={false}
+        leftElement={
+          selectedChatId ? (
+            <TouchableOpacity onPress={() => setSelectedChatId(null)}>
+              <Icon name="close" size={24} color="#fff" style={{ marginLeft: 15 }} />
+            </TouchableOpacity>
+          ) : undefined
+        }
+        rightElement={
+          selectedChatId ? (
+            <TouchableOpacity onPress={deleteSelectedChat}>
+              <Icon name="delete" size={24} color="#ff3333" style={{ marginRight: 15 }} />
+            </TouchableOpacity>
+          ) : undefined
+        }
       />
 
       {/* WhatsApp Search Bar */}
@@ -105,9 +168,10 @@ const ChatsListScreen = ({ navigation }: any) => {
           data={filteredChats}
           keyExtractor={(item: any) => item._id}
           renderItem={({ item }) => {
-            const userRole = currentUser?.role?.toLowerCase();
-            const isLawyer = userRole === 'lawyer';
-            const partner = isLawyer ? item.clientId : item.lawyerId;
+            const myId = currentUser?.id || currentUser?._id;
+            const myIdStr = String(myId || '').trim().toLowerCase();
+            const clientIdStr = String(item.clientId?._id || item.clientId || '').trim().toLowerCase();
+            const partner = clientIdStr === myIdStr ? item.lawyerId : item.clientId;
             const partnerName = partner?.name || "Consultant";
             
             let profilePic = 'https://cdn-icons-png.flaticon.com/512/3135/3135715.png';
@@ -116,23 +180,34 @@ const ChatsListScreen = ({ navigation }: any) => {
               if (rawPath.startsWith('http://') || rawPath.startsWith('https://') || rawPath.startsWith('data:')) {
                 profilePic = rawPath;
               } else {
-                profilePic = `https://mug-work-public.ngrok-free.dev/${rawPath.replace(/^\//, '')}`;
+                profilePic = `https://mug-work-public.ngrok-free.dev/${rawPath.replace(/^\//, '').replace(/\\/g, '/')}`;
               }
             }
             
             const lastMsgText = getMessagePreview(item.lastMessage, item.caseSubject);
             const lastMsgTime = item.lastMessage ? formatMessageTime(item.lastMessage.createdAt) : '';
-            const isMe = item.lastMessage?.sender === currentUser?.id;
-            const isUnread = item.lastMessage && !isMe; // Display badge if last message was received
+            const isMe = item.lastMessage?.sender === (currentUser?.id || currentUser?._id);
+            const lastMsgId = item.lastMessage?._id || item.lastMessage?.id;
+            const hasSeenLastMsg = lastMsgId && lastReadMap[item._id] === lastMsgId;
+            const isUnread = item.lastMessage && !isMe && !hasSeenLastMsg;
+
+            const isSelected = selectedChatId === item._id;
 
             return (
               <TouchableOpacity 
-                style={styles.chatCard}
-                onPress={() => navigation.navigate('ChatsScreen', { 
-                  bookingId: item._id,
-                  partnerName: partnerName,
-                  partnerPic: profilePic
-                })}
+                style={[styles.chatCard, isSelected && { backgroundColor: '#e1eafd' }]}
+                onLongPress={() => setSelectedChatId(item._id)}
+                onPress={() => {
+                  if (selectedChatId) {
+                    setSelectedChatId(selectedChatId === item._id ? null : item._id);
+                  } else {
+                    navigation.navigate('ChatsScreen', { 
+                      bookingId: item._id,
+                      partnerName: partnerName,
+                      partnerPic: profilePic
+                    });
+                  }
+                }}
               >
                 <Image 
                   source={{ uri: profilePic }} 
@@ -252,7 +327,7 @@ const styles = StyleSheet.create({
     fontWeight: '500' 
   },
   timeTextUnread: {
-    color: '#25d366',
+    color: '#0099ff',
     fontWeight: '600'
   },
   subtitle: { 
@@ -266,7 +341,7 @@ const styles = StyleSheet.create({
     fontWeight: '500'
   },
   unreadBadge: {
-    backgroundColor: '#25d366',
+    backgroundColor: '#0099ff',
     width: 20,
     height: 20,
     borderRadius: 10,

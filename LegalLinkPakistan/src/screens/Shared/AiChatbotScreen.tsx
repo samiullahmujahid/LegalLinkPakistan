@@ -30,8 +30,77 @@ interface Message {
   text: string;
   sender: 'user' | 'ai';
   type?: 'text' | 'image';
-  imageUri?: string; // For rendering local uploaded document photos
+  imageUri?: string;
 }
+
+const MarkdownText = ({ text, style }: { text: string; style: any }) => {
+  if (!text) return null;
+  const lines = text.split('\n');
+
+  return (
+    <View style={{ width: '100%' }}>
+      {lines.map((line, lineIndex) => {
+        let isHeading = false;
+        let headingLevel = 0;
+        let isBullet = false;
+        let lineContent = line;
+
+        const headingMatch = line.match(/^(#{1,6})\s+(.*)$/);
+        if (headingMatch) {
+          isHeading = true;
+          headingLevel = headingMatch[1].length;
+          lineContent = headingMatch[2];
+        }
+
+        const bulletMatch = line.match(/^(\*|-)\s+(.*)$/);
+        if (bulletMatch) {
+          isBullet = true;
+          lineContent = bulletMatch[2];
+        }
+
+        const parts = lineContent.split(/(\*\*.*?\*\*)/g);
+        const textElements = parts.map((part, partIndex) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            const cleanText = part.slice(2, -2);
+            return <Text key={partIndex} style={{ fontWeight: 'bold' }}>{cleanText}</Text>;
+          }
+          return <Text key={partIndex}>{part}</Text>;
+        });
+
+        let textStyle: any = [style];
+        if (isHeading) {
+          let fontSize = 16;
+          if (headingLevel === 1) fontSize = 20;
+          else if (headingLevel === 2) fontSize = 18;
+          else if (headingLevel === 3) fontSize = 17;
+
+          textStyle.push({
+            fontSize,
+            fontWeight: '800',
+            marginTop: 8,
+            marginBottom: 4,
+            color: '#001a4d',
+          });
+        }
+
+        if (isBullet) {
+          return (
+            <View key={lineIndex} style={{ flexDirection: 'row', alignItems: 'flex-start', marginVertical: 2, paddingLeft: 8, width: '100%' }}>
+              <Text style={[style, { marginRight: 6 }]}>•</Text>
+              <Text style={[style, { flex: 1, flexWrap: 'wrap' }]}>{textElements}</Text>
+            </View>
+          );
+        }
+
+        return (
+          <Text key={lineIndex} style={[textStyle, { marginVertical: 2 }]}>
+            {textElements}
+          </Text>
+        );
+      })}
+    </View>
+  );
+};
 
 export const AiChatbotScreen = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
@@ -201,9 +270,10 @@ export const AiChatbotScreen = ({ navigation }: any) => {
                       <Text style={styles.dalleLabel}>AI Generated Illustration 🎨</Text>
                     </View>
                   ) : (
-                    <Text style={isUser ? styles.userText : styles.aiText}>
-                      {item.text}
-                    </Text>
+                    <MarkdownText 
+                      text={item.text} 
+                      style={isUser ? styles.userText : styles.aiText} 
+                    />
                   )}
                 </View>
               </View>

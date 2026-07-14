@@ -109,7 +109,7 @@ const ClientRequests = ({ navigation }: any) => {
   };
 
   const renderRequestItem = ({ item }: { item: any }) => {
-    let rawPath = item.clientId?.profilePicUri || '';
+    let rawPath = item.avatarUri || item.clientId?.profilePicUri || '';
     let finalAvatarUrl = '';
 
     if (rawPath) {
@@ -122,7 +122,7 @@ const ClientRequests = ({ navigation }: any) => {
 
     return (
       <StatusCard
-        title={item.clientId?.name || 'Client Request'}
+        title={item.name || item.clientId?.name || 'Client Request'}
         avatarUri={finalAvatarUrl || undefined}
         line1={`Case Type: ${item.category || item.caseType || 'Legal Assistance'}`}
         line2={`Case Subject: ${item.caseTitle || item.caseSubject || '######'}`}

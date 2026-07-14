@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Platform
+  Platform,
+  PermissionsAndroid,
+  Permission
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
@@ -22,6 +24,7 @@ import { globalStyles } from '../../../theme/globalStyles';
 import { LocationSelector } from '../../../components/Common/LocationSelector';
 import { MyInput } from '../../../components/Common/MyInput';
 import { MyButton } from '../../../components/Common/MyButton';
+import Header from '../../../components/Common/Header';
 
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
 
@@ -79,6 +82,7 @@ const LawyerSignup = ({ navigation }: any) => {
     licenseNumber: '',
     licensePic: null as any,
     licenseExpiry: '',
+    experience: '',
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -100,9 +104,35 @@ const LawyerSignup = ({ navigation }: any) => {
     return minLength && hasLetter && hasNumber && hasSpecial;
   };
 
+  const requestStoragePermission = async () => {
+    if (Platform.OS !== 'android') return true;
+    try {
+      const apiLevel = Platform.Version;
+      if (typeof apiLevel === 'number' && apiLevel >= 33) {
+        const granted = await PermissionsAndroid.request(
+          'android.permission.READ_MEDIA_IMAGES' as Permission
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      } else {
+        const granted = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.READ_EXTERNAL_STORAGE
+        );
+        return granted === PermissionsAndroid.RESULTS.GRANTED;
+      }
+    } catch (err) {
+      console.warn(err);
+      return false;
+    }
+  };
+
   // Select License copy (Step 2)
-  const selectLicensePic = () => {
-    const options: ImageLibraryOptions = { mediaType: 'photo', quality: 0.7 };
+  const selectLicensePic = async () => {
+    const hasPermission = await requestStoragePermission();
+    if (!hasPermission) {
+      Alert.alert("Permission Required", "Storage permission is needed to select images.");
+      return;
+    }
+    const options: ImageLibraryOptions = { mediaType: 'photo', quality: 0.5, maxWidth: 800, maxHeight: 800, includeBase64: true };
     launchImageLibrary(options, (response) => {
       if (response.assets && response.assets.length > 0) {
         setProfessionalData({ ...professionalData, licensePic: response.assets[0] });
@@ -120,8 +150,13 @@ const LawyerSignup = ({ navigation }: any) => {
   };
 
   // Select Profile Picture (Step 3)
-  const selectProfilePic = () => {
-    const options: ImageLibraryOptions = { mediaType: 'photo', quality: 0.7 };
+  const selectProfilePic = async () => {
+    const hasPermission = await requestStoragePermission();
+    if (!hasPermission) {
+      Alert.alert("Permission Required", "Storage permission is needed to select images.");
+      return;
+    }
+    const options: ImageLibraryOptions = { mediaType: 'photo', quality: 0.5, maxWidth: 800, maxHeight: 800, includeBase64: true };
     launchImageLibrary(options, (response) => {
       if (response.didCancel) return;
       if (response.assets && response.assets.length > 0) {
@@ -138,7 +173,6 @@ const LawyerSignup = ({ navigation }: any) => {
     if (!basicInfo.province) tempErrors.province = "Province is required";
     if (!basicInfo.district) tempErrors.district = "District is required";
     if (!basicInfo.city) tempErrors.city = "Tehsil is required";
-    if (!basicInfo.courtLevel) tempErrors.courtLevel = "Court Level is required";
 
     if (!basicInfo.password) {
       tempErrors.password = "Password is required";
@@ -164,9 +198,10 @@ const LawyerSignup = ({ navigation }: any) => {
       !professionalData.courtLevel ||
       !professionalData.enrollmentNumber ||
       !professionalData.licenseExpiry ||
-      !professionalData.licensePic
+      !professionalData.licensePic ||
+      !professionalData.experience
     ) {
-      Alert.alert("Required Fields Missing", "Please fill all professional verification fields and upload your license copy.");
+      Alert.alert("Required Fields Missing", "Please fill all professional verification fields, including experience, and upload your license copy.");
       return;
     }
     setStep(3);
@@ -183,7 +218,16 @@ const LawyerSignup = ({ navigation }: any) => {
 
     try {
       const practiceArray = expertise.areasOfPractice ? [expertise.areasOfPractice] : [];
-      const combinedData = {
+      
+      const profilePicBase64 = expertise.profilePic?.base64 
+        ? `data:${expertise.profilePic.type || 'image/jpeg'};base64,${expertise.profilePic.base64}`
+        : '';
+        
+      const licensePicBase64 = professionalData.licensePic?.base64 
+        ? `data:${professionalData.licensePic.type || 'image/jpeg'};base64,${professionalData.licensePic.base64}`
+        : '';
+
+      const payload = {
         ...basicInfo,
         barCouncil: professionalData.barCouncil,
         enrollmentNumber: professionalData.enrollmentNumber,
@@ -191,55 +235,26 @@ const LawyerSignup = ({ navigation }: any) => {
         profCourtLevel: professionalData.courtLevel,
         licenseNumber: professionalData.licenseNumber,
         licenseExpiry: professionalData.licenseExpiry,
-        areasOfPractice: practiceArray,
+        experience: professionalData.experience,
+        areasOfPractice: JSON.stringify(practiceArray),
         bio: expertise.bio,
         officeAddress: expertise.officeAddress,
         consultationFee: expertise.consultationFee,
         paymentMethod: 'Local/Stripe',
-        role: 'Lawyer'
+        role: 'Lawyer',
+        profilePicBase64,
+        licensePicBase64
       };
 
-      const formData = new FormData();
-
-      // Append text fields
-      Object.keys(combinedData).forEach((key) => {
-        if (key === 'areasOfPractice') {
-          formData.append(key, JSON.stringify(combinedData[key]));
-        } else {
-          formData.append(key, (combinedData as any)[key]);
-        }
-      });
-
-      // Append Profile Picture Binary
-      if (expertise.profilePic) {
-        const pPic = expertise.profilePic;
-        const profileUri = Platform.OS === 'android' ? pPic.uri : pPic.uri.replace('file://', '');
-        formData.append('profilePic', {
-          uri: profileUri,
-          name: pPic.fileName || `profile_${Date.now()}.jpg`,
-          type: pPic.type || 'image/jpeg',
-        } as any);
-      }
-
-      // Append License Picture Binary (from step 2)
-      if (professionalData.licensePic) {
-        const lPic = professionalData.licensePic;
-        const licenseUri = Platform.OS === 'android' ? lPic.uri : lPic.uri.replace('file://', '');
-        formData.append('licensePic', {
-          uri: licenseUri,
-          name: lPic.fileName || `license_${Date.now()}.jpg`,
-          type: lPic.type || 'image/jpeg',
-        } as any);
-      }
-
-      console.log("📡 Submitting Lawyer Registration stream to server...");
+      console.log("📡 Submitting Lawyer Registration via JSON/Base64 to server...");
 
       const response = await axios.post(
         `${API_BASE}/auth/register`,
-        formData,
+        payload,
         {
           headers: {
-            'Content-Type': 'multipart/form-data',
+            'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
           },
         }
       );
@@ -252,7 +267,15 @@ const LawyerSignup = ({ navigation }: any) => {
       }
     } catch (error: any) {
       console.log("Lawyer Registration Axios Error:", error?.response?.data || error);
-      Alert.alert("Network Error", "Could not submit files. Ensure backend server router has upload middleware.");
+      let errorMsg = "";
+      if (error.response) {
+        errorMsg = `Server Error (${error.response.status}): ${JSON.stringify(error.response.data)}`;
+      } else if (error.request) {
+        errorMsg = `Network/Connection Error (No response received): ${error.message}`;
+      } else {
+        errorMsg = `Local Code/Serialization Error: ${error.message}`;
+      }
+      Alert.alert("Registration Error Detail", errorMsg);
     } finally {
       setLoading(false);
     }
@@ -269,17 +292,16 @@ const LawyerSignup = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={ls.container}>
-      <TouchableOpacity style={ls.backBtn} onPress={handleBack} disabled={loading}>
-        <Text style={ls.backText}>Back</Text>
-      </TouchableOpacity>
+      <Header 
+        title={`Lawyer Registration ${step === 1 ? "(Step 1/3)" : step === 2 ? "(Step 2/3)" : "(Step 3/3)"}`} 
+        showBackButton={true} 
+        onBackPress={handleBack} 
+      />
 
       <ScrollView contentContainerStyle={ls.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={ls.headerSection}>
-          <Image source={require('../../../assets/images/logo.png')} style={ls.logo} />
-          <Text style={ls.brandName}>Legal Link Pakistan</Text>
-          <Text style={ls.subTitle}>
-            Lawyer Registration {step === 1 ? "(Step 1/3)" : step === 2 ? "(Step 2/3)" : "(Step 3/3)"}
-          </Text>
+        <View style={[ls.headerSection, { marginTop: 15 }]}>
+          <Image source={require('../../../assets/images/logo.png')} style={[ls.logo, { width: 80, height: 80 }]} />
+          <Text style={[ls.brandName, { fontSize: 20, marginTop: 5 }]}>Legal Link Pakistan</Text>
         </View>
 
         {step === 1 && (
@@ -340,24 +362,7 @@ const LawyerSignup = ({ navigation }: any) => {
               styleType="lawyer"
             />
 
-            <View style={{ marginBottom: 15, marginTop: 10 }}>
-              <Text style={{ fontSize: 12, color: '#333', marginBottom: 4, fontWeight: '500' }}>Court Level:</Text>
-              <Dropdown
-                style={[ls.dropdown, step1Errors.courtLevel && ls.inputError]}
-                placeholderStyle={ls.placeholderStyle}
-                selectedTextStyle={ls.selectedTextStyle}
-                data={courtLevelDataStep1}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Court Level"
-                value={basicInfo.courtLevel}
-                onChange={item => {
-                  setBasicInfo({ ...basicInfo, courtLevel: item.value });
-                  if (step1Errors.courtLevel) setStep1Errors({ ...step1Errors, courtLevel: '' });
-                }}
-              />
-              {step1Errors.courtLevel && <Text style={{ color: 'red', fontSize: 11, marginTop: 2, marginLeft: 5 }}>{step1Errors.courtLevel}</Text>}
-            </View>
+
 
             <MyInput
               placeholder="Password"
@@ -461,6 +466,14 @@ const LawyerSignup = ({ navigation }: any) => {
               />
             )}
 
+            <Text style={ls.fieldLabel}>Experience (Years)*</Text>
+            <MyInput
+              placeholder="e.g. 5"
+              keyboardType="number-pad"
+              value={professionalData.experience}
+              onChangeText={(val) => setProfessionalData({ ...professionalData, experience: val })}
+            />
+
             <MyButton title="Next" onPress={handleNextStep2} style={{ borderRadius: 25, marginTop: 10 }} />
           </View>
         )}
@@ -488,8 +501,8 @@ const LawyerSignup = ({ navigation }: any) => {
               placeholder="Describe your legal experience..."
               value={expertise.bio}
               onChangeText={(val) => setExpertise({ ...expertise, bio: val })}
-              containerStyle={{ height: 100 }}
-              inputStyle={{ textAlignVertical: 'top', height: 90 }}
+              multiline={true}
+              numberOfLines={4}
             />
 
             <Text style={ls.fieldLabel}>Office Address*</Text>

@@ -17,6 +17,7 @@ const connectDB = require('./src/config/db');
 // Socket Service & Notification Service
 const socketService = require('./src/services/socketService');
 const { createAndSendNotification } = require('./src/services/notificationService');
+const { protect } = require('./src/middlewares/authMiddleware');
 
 // Routes
 const authRoutes = require('./src/routes/authRoutes');
@@ -102,11 +103,23 @@ io.on('connection', (socket) => {
       // Trigger chat notification
       const booking = await Booking.findById(data.bookingId);
       if (booking) {
+        if (booking.deletedBy && booking.deletedBy.length > 0) {
+          booking.deletedBy = [];
+          await booking.save();
+        }
         const receiverId = booking.clientId.toString() === data.sender.toString()
           ? booking.lawyerId
           : booking.clientId;
         
-        const senderUser = await User.findById(data.sender);
+        let senderUser = await User.findById(data.sender);
+        if (!senderUser) {
+          const ClientModel = require('./src/models/Client');
+          senderUser = await ClientModel.findById(data.sender);
+        }
+        if (!senderUser) {
+          const LawyerModel = require('./src/models/Lawyer');
+          senderUser = await LawyerModel.findById(data.sender);
+        }
         const senderName = senderUser ? senderUser.name : "Legal Link Contact";
         
         let bodyText = data.text || "Sent an attachment 📎";
@@ -125,7 +138,6 @@ io.on('connection', (socket) => {
     } catch (error) { console.error("Socket Error:", error); }
   });
 
-  // Relay calling offer/video triggers to target peer
   socket.on('callUser', (data) => {
     const targetSocketId = connectedUsers.get(data.userToCall.toString());
     if (targetSocketId) {
@@ -135,7 +147,8 @@ io.on('connection', (socket) => {
         callerId: socket.userId,
         isVideo: data.isVideo,
         callerName: data.callerName,
-        callerPic: data.callerPic
+        callerPic: data.callerPic,
+        bookingId: data.bookingId
       });
     }
   });
@@ -190,23 +203,80 @@ app.post('/api/bookings/payment/intent', async (req, res) => {
   } catch (error) { return res.status(500).json({ success: false, message: "Payment setup failed" }); }
 });
 
+// Helper to save base64 chat attachments
+const saveBase64ChatFile = (base64Str, filename, subfolder) => {
+  try {
+    if (!base64Str) return null;
+    const matches = base64Str.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+    let base64Data = base64Str;
+    if (matches && matches.length === 3) {
+      base64Data = matches[2];
+    }
+    const buffer = Buffer.from(base64Data, 'base64');
+    const uploadPath = path.join(__dirname, 'uploads', subfolder, filename);
+    fs.writeFileSync(uploadPath, buffer);
+    return `uploads/${subfolder}/${filename}`;
+  } catch (e) {
+    console.error("saveBase64ChatFile error:", e);
+    return null;
+  }
+};
+
+// Dynamic upload middleware wrappers to bypass Multer stream hijacking on JSON requests
+const uploadAudioMiddleware = (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    return upload.any()(req, res, next);
+  }
+  next();
+};
+
+const uploadChatMiddleware = (req, res, next) => {
+  const contentType = req.headers['content-type'] || '';
+  if (contentType.includes('multipart/form-data')) {
+    return uploadChatFile.any()(req, res, next);
+  }
+  next();
+};
+
 // Dual-path support for voice note uploads (accepting 'file' or 'audio' field keys)
 const handleAudioUpload = (req, res) => {
+  if (req.body.fileBase64) {
+    const filename = `voice-${Date.now()}.wav`;
+    const savedPath = saveBase64ChatFile(req.body.fileBase64, filename, 'audio');
+    if (savedPath) {
+      const fileUrl = `${req.protocol}://${req.get('host')}/${savedPath}`;
+      return res.status(200).json({ success: true, url: fileUrl, fileUrl: fileUrl });
+    }
+    return res.status(500).json({ success: false, message: 'Failed to write base64 audio' });
+  }
+
   const file = req.file || (req.files && req.files[0]);
   if (!file) return res.status(400).json({ success: false, message: 'No file uploaded' });
   const fileUrl = `${req.protocol}://${req.get('host')}/uploads/audio/${file.filename}`;
   res.status(200).json({ success: true, url: fileUrl, fileUrl: fileUrl });
 };
-app.post('/api/chat/upload-audio', upload.any(), handleAudioUpload);
-app.post('/api/upload/audio', upload.any(), handleAudioUpload);
+app.post('/api/chat/upload-audio', uploadAudioMiddleware, handleAudioUpload);
+app.post('/api/upload/audio', uploadAudioMiddleware, handleAudioUpload);
 
 const handleChatFileUpload = (req, res) => {
+  if (req.body.fileBase64) {
+    const originalName = req.body.fileName || 'file.jpg';
+    const filename = `${Date.now()}-${originalName}`;
+    const savedPath = saveBase64ChatFile(req.body.fileBase64, filename, 'chat');
+    if (savedPath) {
+      const fileUrl = `${req.protocol}://${req.get('host')}/${savedPath}`;
+      return res.status(200).json({ success: true, url: fileUrl, fileUrl: fileUrl });
+    }
+    return res.status(500).json({ success: false, message: 'Failed to write base64 file' });
+  }
+
   const file = req.file || (req.files && req.files[0]);
   if (!file) return res.status(400).json({ success: false, message: 'No file uploaded' });
   const fileUrl = `${req.protocol}://${req.get('host')}/uploads/chat/${file.filename}`;
   res.status(200).json({ success: true, url: fileUrl, fileUrl: fileUrl });
 };
-app.post('/api/chat/upload-file', uploadChatFile.any(), handleChatFileUpload);
+app.post('/api/chat/upload-file', uploadChatMiddleware, handleChatFileUpload);
 
 // Route Registration
 app.use('/api/auth', authRoutes);
@@ -216,11 +286,26 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/complaints', complaintRoutes); 
 app.use('/api/notifications', notificationRoutes);
 
-app.get('/api/chat/:bookingId', async (req, res) => {
+app.get('/api/chat/:bookingId', protect, async (req, res) => {
   try {
-    const messages = await Message.find({ bookingId: req.params.bookingId }).sort({ createdAt: 1 });
+    const userId = req.user._id || req.user.id;
+    const bookingId = req.params.bookingId;
+    
+    // Ensure chat has not been deleted by this user
+    const booking = await Booking.findById(bookingId);
+    if (!booking || (booking.deletedBy && booking.deletedBy.includes(userId))) {
+      return res.status(404).json({ success: false, message: "Chat not found" });
+    }
+
+    const messages = await Message.find({ 
+      bookingId,
+      deletedBy: { $ne: userId }
+    }).sort({ createdAt: 1 });
     res.status(200).json({ success: true, messages });
-  } catch (err) { res.status(500).json({ success: false, message: "Error fetching history" }); }
+  } catch (err) { 
+    console.error("Fetch Chat History Error:", err);
+    res.status(500).json({ success: false, message: "Error fetching history" }); 
+  }
 });
 
 app.get('/api/chat/list/:userId', async (req, res) => {
@@ -228,13 +313,76 @@ app.get('/api/chat/list/:userId', async (req, res) => {
     const userId = req.params.userId;
     const chats = await Booking.find({
       $or: [{ clientId: userId }, { lawyerId: userId }],
-      status: 'confirmed'
-    }).populate('lawyerId', 'name profilePic').populate('clientId', 'name profilePic');
+      status: 'confirmed',
+      deletedBy: { $ne: userId }
+    }).populate('lawyerId', 'name profilePic profilePicUri').populate('clientId', 'name profilePic profilePicUri');
 
     const chatsWithLastMessage = await Promise.all(chats.map(async (chat) => {
-      const lastMsg = await Message.findOne({ bookingId: chat._id }).sort({ createdAt: -1 }).lean();
+      // Find the last message that is NOT deleted for this user
+      const lastMsg = await Message.findOne({ 
+        bookingId: chat._id,
+        deletedBy: { $ne: userId }
+      }).sort({ createdAt: -1 }).lean();
+
+      let chatObj = chat.toObject ? chat.toObject() : chat;
+      if (!chatObj.clientId || !chatObj.clientId.name) {
+        const rawBooking = await Booking.findById(chat._id).select('clientId');
+        const targetClientId = rawBooking?.clientId || (chatObj.clientId?._id || chatObj.clientId);
+        if (targetClientId) {
+          const ClientModel = require('./src/models/Client');
+          const clientDoc = await ClientModel.findById(targetClientId).select('name profilePic profilePicUri');
+          if (clientDoc) {
+            chatObj.clientId = {
+              _id: clientDoc._id,
+              name: clientDoc.name,
+              profilePic: clientDoc.profilePic,
+              profilePicUri: clientDoc.profilePicUri
+            };
+          } else {
+            const LawyerModel = require('./src/models/Lawyer');
+            const lawyerClient = await LawyerModel.findById(targetClientId).select('name profilePic profilePicUri');
+            if (lawyerClient) {
+              chatObj.clientId = {
+                _id: lawyerClient._id,
+                name: lawyerClient.name,
+                profilePic: lawyerClient.profilePic,
+                profilePicUri: lawyerClient.profilePicUri
+              };
+            }
+          }
+        }
+      }
+
+      if (!chatObj.lawyerId || !chatObj.lawyerId.name) {
+        const rawBooking = await Booking.findById(chat._id).select('lawyerId');
+        const targetLawyerId = rawBooking?.lawyerId || (chatObj.lawyerId?._id || chatObj.lawyerId);
+        if (targetLawyerId) {
+          const LawyerModel = require('./src/models/Lawyer');
+          const lawyerDoc = await LawyerModel.findById(targetLawyerId).select('name profilePic profilePicUri');
+          if (lawyerDoc) {
+            chatObj.lawyerId = {
+              _id: lawyerDoc._id,
+              name: lawyerDoc.name,
+              profilePic: lawyerDoc.profilePic,
+              profilePicUri: lawyerDoc.profilePicUri
+            };
+          } else {
+            const ClientModel = require('./src/models/Client');
+            const clientDoc = await ClientModel.findById(targetLawyerId).select('name profilePic profilePicUri');
+            if (clientDoc) {
+              chatObj.lawyerId = {
+                _id: clientDoc._id,
+                name: clientDoc.name,
+                profilePic: clientDoc.profilePic,
+                profilePicUri: clientDoc.profilePicUri
+              };
+            }
+          }
+        }
+      }
+
       return {
-        ...chat.toObject ? chat.toObject() : chat,
+        ...chatObj,
         lastMessage: lastMsg || null
       };
     }));
@@ -243,6 +391,70 @@ app.get('/api/chat/list/:userId', async (req, res) => {
   } catch (err) { 
     console.error("Fetch Chat List Error:", err);
     res.status(500).json({ success: false, message: "Error fetching chat list" }); 
+  }
+});
+
+app.delete('/api/chat/message/:messageId', protect, async (req, res) => {
+  try {
+    const { deleteType } = req.body; // 'me' or 'everyone'
+    const userId = req.user._id || req.user.id;
+    const message = await Message.findById(req.params.messageId);
+
+    if (!message) {
+      return res.status(404).json({ success: false, message: "Message not found" });
+    }
+
+    if (deleteType === 'everyone') {
+      if (message.sender.toString() !== userId.toString()) {
+        return res.status(403).json({ success: false, message: "Unauthorized to delete for everyone" });
+      }
+      message.text = "This message was deleted";
+      message.type = "deleted";
+      await message.save();
+
+      io.to(message.bookingId.toString()).emit('messageDeleted', {
+        messageId: message._id,
+        text: message.text,
+        type: message.type
+      });
+    } else {
+      if (!message.deletedBy.includes(userId)) {
+        message.deletedBy.push(userId);
+        await message.save();
+      }
+    }
+
+    return res.status(200).json({ success: true, message: "Message deleted successfully" });
+  } catch (error) {
+    console.error("Delete Message Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+app.delete('/api/chat/chat/:bookingId', protect, async (req, res) => {
+  try {
+    const userId = req.user._id || req.user.id;
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findById(bookingId);
+    if (!booking) {
+      return res.status(404).json({ success: false, message: "Chat not found" });
+    }
+
+    if (!booking.deletedBy.includes(userId)) {
+      booking.deletedBy.push(userId);
+      await booking.save();
+    }
+
+    await Message.updateMany(
+      { bookingId, deletedBy: { $ne: userId } },
+      { $addToSet: { deletedBy: userId } }
+    );
+
+    return res.status(200).json({ success: true, message: "Chat deleted successfully" });
+  } catch (error) {
+    console.error("Delete Chat Error:", error);
+    return res.status(500).json({ success: false, message: error.message });
   }
 });
 

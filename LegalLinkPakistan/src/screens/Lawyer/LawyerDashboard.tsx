@@ -26,16 +26,19 @@ const LawyerDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
     try {
       if (screenName === 'ClientRequests') {
         navigation.navigate(screenName);
-      } 
+      }
       else if (screenName === 'TrackAppointment') {
         navigation.navigate('TrackAppointment', { role: 'lawyer' });
       }
       else if (screenName === 'ComplaintStatus') {
         navigation.navigate('ComplaintStatus');
       }
+      else if (screenName === 'FindLawyers' || screenName === 'RecommendedLawyersScreen') {
+        navigation.navigate('RecommendedLawyersScreen');
+      }
       else {
         Alert.alert(
-          'Under Development 🛠️', 
+          'Under Development 🛠️',
           `The ${screenName} interface workflow integration is currently baking.`
         );
       }
@@ -47,9 +50,9 @@ const LawyerDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
     <View style={s.container}>
       {/* Header Section */}
-      <Header 
-        title="Legal Link Pakistan" 
-        showBackButton={false} 
+      <Header
+        title="Legal Link Pakistan"
+        showBackButton={false}
         rightElement={
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             {/* Wallet Icon Shortcut */}
@@ -58,13 +61,13 @@ const LawyerDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
             </TouchableOpacity>
             <NotificationIcon />
           </View>
-        } 
+        }
       />
 
       {/* Main Content Section */}
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         {menuItems.map((item, index) => (
-          <Card 
+          <Card
             key={index}
             title={item.title}
             iconName={item.icon}

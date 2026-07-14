@@ -43,7 +43,8 @@ exports.submitComplaint = async (req, res) => {
         const newComplaint = await Complaint.create(complaintData);
 
         // Notify Admins
-        const admins = await User.find({ role: 'Admin' });
+        const Admin = require('../models/Admin');
+        const admins = await Admin.find({});
         for (const admin of admins) {
             await createAndSendNotification(
                 admin._id,

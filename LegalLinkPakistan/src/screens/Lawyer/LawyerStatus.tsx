@@ -1,12 +1,13 @@
 import React, { useState, useCallback } from 'react';
 import { 
-  View, Text, TouchableOpacity, Image, ActivityIndicator 
+  View, Text, TouchableOpacity, Image, ActivityIndicator, Alert
 } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LawyerStyles as ls } from '../../theme/styles/LawyerStyles';
 import Header from '../../components/Common/Header';
+import { MyButton } from '../../components/Common/MyButton';
 
 const LawyerStatus = ({ navigation, route }: any) => {
   const [status, setStatus] = useState('Pending Approval');
@@ -23,6 +24,44 @@ const LawyerStatus = ({ navigation, route }: any) => {
       }
     } catch (err) {
       console.log("Status update error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoToDashboard = async () => {
+    setLoading(true);
+    try {
+      const email = await AsyncStorage.getItem('userEmail');
+      if (!email) {
+        Alert.alert("Error", "User email not found. Please log in again.");
+        navigation.navigate('Login', { role: 'Lawyer' });
+        return;
+      }
+      const res = await axios.get(`https://mug-work-public.ngrok-free.dev/api/auth/lawyer-profile-check/${email}`);
+      if (res.data.isApproved) {
+        setStatus('Approved');
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'LawyerDashboard' }],
+        });
+      } else {
+        Alert.alert(
+          "Verification Pending",
+          "Verification is Under process, please wait.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                navigation.navigate('Login', { role: 'Lawyer' });
+              }
+            }
+          ]
+        );
+      }
+    } catch (err) {
+      console.log("Error checking status:", err);
+      Alert.alert("Error", "Failed to check verification status. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -71,7 +110,8 @@ const LawyerStatus = ({ navigation, route }: any) => {
           borderRadius: 15,
           paddingVertical: 30,
           alignItems: 'center',
-          backgroundColor: '#fff'
+          backgroundColor: '#fff',
+          marginBottom: 30
         }}>
           <Text style={{ fontSize: 15, fontWeight: 'bold', color: '#001a4d', marginBottom: 10 }}>
             Profile Status
@@ -84,6 +124,12 @@ const LawyerStatus = ({ navigation, route }: any) => {
             </Text>
           )}
         </View>
+
+        <MyButton 
+          title="Go to Dashboard" 
+          onPress={handleGoToDashboard} 
+          style={{ width: '85%' }}
+        />
 
       </View>
     </View>

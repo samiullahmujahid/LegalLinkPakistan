@@ -91,6 +91,30 @@ export const LawyerStyles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold'
   },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    height: 56,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f4fa',
+    backgroundColor: '#fff',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  headerBackBtn: {
+    padding: 4,
+  },
+  headerTitleText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#001a4d',
+    textAlign: 'center',
+  },
   submitBtn: {
     backgroundColor: '#001a4d',
     height: 50,
@@ -189,12 +213,12 @@ export const LawyerStyles = StyleSheet.create({
     marginBottom: 5
   },
   dropdown: {
-    backgroundColor: '#e5e7eb',
+    backgroundColor: '#fff',
     borderRadius: 10,
-    height: 48,
+    height: 50,
     paddingHorizontal: 15,
     borderWidth: 1,
-    borderColor: '#d1d5db',
+    borderColor: '#E0E0E0',
   },
   placeholderStyle: { color: '#777', fontSize: 14 },
   selectedTextStyle: { color: '#000', fontSize: 14 },

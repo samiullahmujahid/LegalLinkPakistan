@@ -9,11 +9,11 @@ import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
 interface MenuItem {
   title: string;
   icon: string;
-  screen?: string; 
+  screen?: string;
 }
 
 const ClientDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
-  
+
   const menuItems: MenuItem[] = [
     { title: 'Book an Appointment', icon: 'file-document-outline', screen: 'CaseDetails' },
     { title: 'Appointment Tracking', icon: 'file-find-outline', screen: 'TrackAppointment' },
@@ -35,7 +35,7 @@ const ClientDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
         navigation.navigate('ComplaintStatus');
       } else {
         Alert.alert(
-          'Under Development 🛠️', 
+          'Under Development 🛠️',
           `The ${item.title} dashboard pipeline is currently cooking.`
         );
       }
@@ -47,16 +47,16 @@ const ClientDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
   return (
     <View style={s.container}>
       {/* Header Section */}
-      <Header 
-        title="Legal Link Pakistan" 
-        showBackButton={false} 
-        rightElement={<NotificationIcon />} 
+      <Header
+        title="Legal Link Pakistan"
+        showBackButton={false}
+        rightElement={<NotificationIcon />}
       />
 
       {/* Main Content Section */}
       <ScrollView contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         {menuItems.map((item, index) => (
-          <Card 
+          <Card
             key={index}
             title={item.title}
             iconName={item.icon}

@@ -66,7 +66,8 @@ const BookingSchema = new mongoose.Schema({
     paymentDeadline: {
         type: Date,
         default: null
-    }
+    },
+    deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
 }, {
     timestamps: true 
 });

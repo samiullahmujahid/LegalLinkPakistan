@@ -29,6 +29,7 @@ const lawyerSchema = new mongoose.Schema({
     bio: { type: String, default: "" },            
     officeAddress: { type: String, default: "" },    
     profilePic: { type: String, default: "" },    
+    profilePicUri: { type: String, default: "" },
     
     // --- Rating System ---
     averageRating: { type: Number, default: 0 },

@@ -76,7 +76,7 @@ export const NotificationsScreen = () => {
     if (!item.isRead) {
       markAsRead(item._id);
     }
-    handleNotificationRedirect(item.data);
+    handleNotificationRedirect(item.data, item.type);
   };
 
   const renderRightActions = (progress: any, dragX: any, id: string) => {

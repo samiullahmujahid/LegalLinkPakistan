@@ -3,6 +3,7 @@ import { View, TouchableOpacity, StyleSheet, Text, PanResponder, Animated, Platf
 import { RTCPeerConnection, RTCView, mediaDevices, RTCIceCandidate, RTCSessionDescription } from 'react-native-webrtc';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import socket from '../../../socket';
+import { COLORS } from '../../../theme/theme';
 
 const CallScreen = ({ route, navigation }: any) => {
   const { bookingId, partnerId, partnerName, partnerPic, isCaller, isVideo, callerName, callerPic } = route.params;
@@ -10,12 +11,22 @@ const CallScreen = ({ route, navigation }: any) => {
   const [remoteStream, setRemoteStream] = useState<any>(null);
   const [callStatus, setCallStatus] = useState<string>('Connecting...');
   
+  // Real-time elapsed call timer state
+  const [secondsElapsed, setSecondsElapsed] = useState(0);
+
   // States for visibility and controls
   const [isVisible, setIsVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
+  const [isCameraOn, setIsCameraOn] = useState(true);
   const [isFrontCamera, setIsFrontCamera] = useState(true);
+
+  // Animated values for pulse waves behind avatar
+  const pulseScale1 = useRef(new Animated.Value(1)).current;
+  const pulseOpacity1 = useRef(new Animated.Value(0.4)).current;
+  const pulseScale2 = useRef(new Animated.Value(1)).current;
+  const pulseOpacity2 = useRef(new Animated.Value(0.4)).current;
 
   // Position for dragging (picture-in-picture local preview)
   const pan = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
@@ -68,7 +79,7 @@ const CallScreen = ({ route, navigation }: any) => {
   }, [navigation]);
 
   const getAvatarUri = (pic: string) => {
-    if (!pic) return 'https://via.placeholder.com/150';
+    if (!pic) return '';
     if (pic.startsWith('http://') || pic.startsWith('https://') || pic.startsWith('data:')) {
       return pic;
     }
@@ -76,14 +87,14 @@ const CallScreen = ({ route, navigation }: any) => {
     return `https://mug-work-public.ngrok-free.dev${cleanPath}`;
   };
 
-  // Auto-hide controls overlay on video call after 5 seconds
+  // Auto-hide controls overlay on video call after 5 seconds of inactivity
   useEffect(() => {
     if (!isVideo) return;
     const timer = setTimeout(() => {
       Animated.timing(fadeAnim, { toValue: 0, duration: 500, useNativeDriver: true }).start(() => setIsVisible(false));
     }, 5000);
     return () => clearTimeout(timer);
-  }, [isVideo]);
+  }, [isVideo, isVisible]);
 
   const toggleVisibility = () => {
     if (!isVideo) return;
@@ -91,6 +102,85 @@ const CallScreen = ({ route, navigation }: any) => {
       setIsVisible(true);
       Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
     }
+  };
+
+  // Trigger pulse wave animations during ringing/connecting
+  useEffect(() => {
+    let pulseAnimation: any = null;
+    const isRinging = callStatus === 'Ringing...' || callStatus === 'Connecting...' || callStatus === 'Answering...';
+
+    if (isRinging) {
+      pulseScale1.setValue(1);
+      pulseOpacity1.setValue(0.5);
+      pulseScale2.setValue(1);
+      pulseOpacity2.setValue(0.5);
+
+      pulseAnimation = Animated.loop(
+        Animated.parallel([
+          Animated.sequence([
+            Animated.parallel([
+              Animated.timing(pulseScale1, {
+                toValue: 2.2,
+                duration: 2000,
+                useNativeDriver: true
+              }),
+              Animated.timing(pulseOpacity1, {
+                toValue: 0,
+                duration: 2000,
+                useNativeDriver: true
+              })
+            ])
+          ]),
+          Animated.sequence([
+            Animated.delay(1000),
+            Animated.parallel([
+              Animated.timing(pulseScale2, {
+                toValue: 2.2,
+                duration: 2000,
+                useNativeDriver: true
+              }),
+              Animated.timing(pulseOpacity2, {
+                toValue: 0,
+                duration: 2000,
+                useNativeDriver: true
+              })
+            ])
+          ])
+        ])
+      );
+      pulseAnimation.start();
+    } else {
+      if (pulseAnimation) pulseAnimation.stop();
+      pulseScale1.setValue(1);
+      pulseOpacity1.setValue(0);
+      pulseScale2.setValue(1);
+      pulseOpacity2.setValue(0);
+    }
+
+    return () => {
+      if (pulseAnimation) pulseAnimation.stop();
+    };
+  }, [callStatus]);
+
+  // Real-time call duration elapsed timer (starts on 'Connected')
+  useEffect(() => {
+    let timerInterval: any = null;
+    if (callStatus === 'Connected') {
+      timerInterval = setInterval(() => {
+        setSecondsElapsed((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setSecondsElapsed(0);
+    }
+    return () => {
+      if (timerInterval) clearInterval(timerInterval);
+    };
+  }, [callStatus]);
+
+  const formatTimer = (totalSeconds: number) => {
+    const mins = Math.floor(totalSeconds / 60);
+    const secs = totalSeconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   useEffect(() => {
@@ -123,7 +213,8 @@ const CallScreen = ({ route, navigation }: any) => {
             from: socket.id, 
             isVideo: !!isVideo,
             callerName,
-            callerPic
+            callerPic,
+            bookingId
           });
         });
       } else if (route.params.incomingSignal) {
@@ -165,8 +256,15 @@ const CallScreen = ({ route, navigation }: any) => {
   };
 
   const toggleSpeaker = () => {
-    // Styling toggle for UX representation
     setIsSpeakerOn(!isSpeakerOn);
+  };
+
+  const toggleCameraOnOff = () => {
+    if (localStream?.getVideoTracks()?.[0]) {
+      const videoTrack = localStream.getVideoTracks()[0];
+      videoTrack.enabled = !isCameraOn;
+      setIsCameraOn(!isCameraOn);
+    }
   };
 
   const toggleCamera = () => {
@@ -186,6 +284,16 @@ const CallScreen = ({ route, navigation }: any) => {
     navigation.goBack();
   };
 
+  const getStatusTextDisplay = () => {
+    if (callStatus === 'Connected') {
+      return formatTimer(secondsElapsed);
+    }
+    return callStatus;
+  };
+
+  // Determine if there is a valid user avatar profile picture passed in
+  const hasPic = partnerPic && partnerPic.trim().length > 0 && !partnerPic.includes('placeholder');
+
   return (
     <View style={styles.container}>
       <TouchableOpacity activeOpacity={1} onPress={toggleVisibility} style={{ flex: 1 }}>
@@ -194,29 +302,54 @@ const CallScreen = ({ route, navigation }: any) => {
         ) : (
           (isVisible || !isVideo) && (
             <View style={styles.voiceCallContainer}>
-              <View style={styles.statusContainer}>
-                <Text style={styles.partnerName}>{partnerName || 'Legal Link Partner'}</Text>
-                <Text style={styles.statusText}>{callStatus}</Text>
-              </View>
-
-              <View style={styles.avatarWrapper}>
-                <Image 
-                  source={{ uri: getAvatarUri(partnerPic) }}
-                  style={styles.largeAvatar}
-                />
-                <View style={styles.glowingBorder} />
-              </View>
-
+              {/* Padlock + Encryption Header */}
               <View style={styles.encryptionInfo}>
-                <Icon name="lock" size={14} color="#8696a0" />
+                <Icon name="lock" size={14} color="#94a3b8" />
                 <Text style={styles.encryptionText}>End-to-end encrypted</Text>
               </View>
+
+              <View style={styles.statusContainer}>
+                <Text style={styles.partnerName}>{partnerName || 'Legal Consultant'}</Text>
+                <Text style={styles.statusText}>{getStatusTextDisplay()}</Text>
+              </View>
+
+              {/* Centered Avatar with pulse rings */}
+              <View style={styles.avatarWrapper}>
+                <Animated.View style={[
+                  styles.pulseRing, 
+                  { 
+                    transform: [{ scale: pulseScale1 }], 
+                    opacity: pulseOpacity1 
+                  }
+                ]} />
+                <Animated.View style={[
+                  styles.pulseRing, 
+                  { 
+                    transform: [{ scale: pulseScale2 }], 
+                    opacity: pulseOpacity2 
+                  }
+                ]} />
+                {hasPic ? (
+                  <Image 
+                    source={{ uri: getAvatarUri(partnerPic) }}
+                    style={styles.largeAvatar}
+                  />
+                ) : (
+                  <View style={styles.avatarPlaceholder}>
+                    <Icon name="account" size={90} color="#0099ff" />
+                  </View>
+                )}
+              </View>
+
+              {/* Spacing placeholder */}
+              <View style={{ height: 60 }} />
             </View>
           )
         )}
       </TouchableOpacity>
       
-      {localStream && isVideo && (
+      {/* Video Call local stream preview */}
+      {localStream && isVideo && isCameraOn && (
         <Animated.View {...panResponder.panHandlers} style={[styles.localVideo, pan.getLayout()]}>
           <RTCView 
             streamURL={localStream.toURL()} 
@@ -226,29 +359,65 @@ const CallScreen = ({ route, navigation }: any) => {
           />
         </Animated.View>
       )}
+
+      {/* Video call overlay header (Name + Timer) */}
+      {remoteStream && isVideo && isVisible && (
+        <View style={styles.videoHeaderOverlay}>
+          <Text style={styles.videoPartnerName}>{partnerName || 'Legal Consultant'}</Text>
+          <Text style={styles.videoTimerText}>{getStatusTextDisplay()}</Text>
+        </View>
+      )}
       
+      {/* Interactive bottom control panel */}
       {isVisible && (
-        <Animated.View style={[styles.controls, { opacity: fadeAnim }]}>
-          <TouchableOpacity style={[styles.controlBtn, isMuted && styles.activeControlBtn]} onPress={toggleMute}>
-            <Icon name={isMuted ? "microphone-off" : "microphone"} size={26} color="#fff" />
-            <Text style={styles.controlLabel}>Mute</Text>
-          </TouchableOpacity>
+        <Animated.View style={[
+          styles.controls, 
+          isVideo ? styles.videoControls : styles.voiceControls, 
+          { opacity: fadeAnim }
+        ]}>
           
-          <TouchableOpacity style={styles.endCall} onPress={endCall}>
-            <Icon name="phone-hangup" size={32} color="#fff" />
-          </TouchableOpacity>
-          
+          {/* Mute Button */}
+          <View style={styles.controlBtnWrapper}>
+            <TouchableOpacity style={[styles.controlBtn, isMuted && styles.activeControlBtn]} onPress={toggleMute}>
+              <Icon name={isMuted ? "microphone-off" : "microphone"} size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.controlLabel} numberOfLines={1}>Mute</Text>
+          </View>
+
+          {/* Speaker (Voice) or Flip Camera (Video) */}
           {isVideo ? (
-            <TouchableOpacity style={styles.controlBtn} onPress={toggleCamera}>
-              <Icon name="camera-flip" size={26} color="#fff" />
-              <Text style={styles.controlLabel}>Flip</Text>
-            </TouchableOpacity>
+            <View style={styles.controlBtnWrapper}>
+              <TouchableOpacity style={styles.controlBtn} onPress={toggleCamera}>
+                <Icon name="camera-flip" size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={styles.controlLabel} numberOfLines={1}>Flip</Text>
+            </View>
           ) : (
-            <TouchableOpacity style={[styles.controlBtn, !isSpeakerOn && styles.activeControlBtn]} onPress={toggleSpeaker}>
-              <Icon name={isSpeakerOn ? "volume-high" : "volume-mute"} size={26} color="#fff" />
-              <Text style={styles.controlLabel}>Speaker</Text>
-            </TouchableOpacity>
+            <View style={styles.controlBtnWrapper}>
+              <TouchableOpacity style={[styles.controlBtn, isSpeakerOn && styles.activeControlBtn]} onPress={toggleSpeaker}>
+                <Icon name={isSpeakerOn ? "volume-high" : "volume-mute"} size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={styles.controlLabel} numberOfLines={1}>Speaker</Text>
+            </View>
           )}
+
+          {/* Camera On/Off Toggle (Video) */}
+          {isVideo && (
+            <View style={styles.controlBtnWrapper}>
+              <TouchableOpacity style={[styles.controlBtn, !isCameraOn && styles.activeControlBtn]} onPress={toggleCameraOnOff}>
+                <Icon name={isCameraOn ? "camera" : "camera-off"} size={24} color="#fff" />
+              </TouchableOpacity>
+              <Text style={styles.controlLabel} numberOfLines={1}>Video</Text>
+            </View>
+          )}
+
+          {/* Hangup Red Button */}
+          <View style={styles.controlBtnWrapper}>
+            <TouchableOpacity style={styles.endCall} onPress={endCall}>
+              <Icon name="phone-hangup" size={28} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.controlLabel} numberOfLines={1}>Hang Up</Text>
+          </View>
         </Animated.View>
       )}
     </View>
@@ -256,8 +425,8 @@ const CallScreen = ({ route, navigation }: any) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0B141A' }, // WhatsApp-style dark color
-  remoteVideo: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#000B21' }, // Navy Black
+  remoteVideo: { flex: 1, backgroundColor: '#000B21' },
   localVideo: { 
     width: 100, 
     height: 150, 
@@ -266,72 +435,127 @@ const styles = StyleSheet.create({
     right: 20, 
     zIndex: 99999,
     elevation: 99999,
-    borderRadius: Platform.OS === 'ios' ? 12 : 0,
-    overflow: Platform.OS === 'ios' ? 'hidden' : 'visible',
-    borderWidth: 1.5,
-    borderColor: '#202c33',
+    borderRadius: 12,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    backgroundColor: '#000',
   },
   voiceCallContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 100,
+    paddingVertical: 60,
   },
   statusContainer: { 
     alignItems: 'center', 
+    marginTop: 10,
   },
   partnerName: { color: '#fff', fontSize: 28, fontWeight: '700', letterSpacing: 0.5 },
-  statusText: { color: '#8696a0', fontSize: 16, marginTop: 8, fontWeight: '500' },
+  statusText: { color: '#0099ff', fontSize: 16, marginTop: 8, fontWeight: '600' }, // Info Blue
   avatarWrapper: {
-    width: 180,
-    height: 180,
+    width: 220,
+    height: 220,
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+    marginTop: 30,
   },
   largeAvatar: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 2,
-    borderColor: '#00a884',
-    backgroundColor: '#111b21',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 3,
+    borderColor: '#0099ff', // Info Blue
+    backgroundColor: '#001A4D', // Brand Navy
   },
-  glowingBorder: {
+  avatarPlaceholder: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    borderWidth: 3,
+    borderColor: '#0099ff', // Info Blue
+    backgroundColor: '#001A4D', // Brand Navy
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  pulseRing: {
     position: 'absolute',
-    width: 180,
-    height: 180,
-    borderRadius: 90,
-    borderWidth: 1,
-    borderColor: 'rgba(0, 168, 132, 0.3)',
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    backgroundColor: '#0099ff',
+    zIndex: -1,
   },
   encryptionInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#111b21',
+    backgroundColor: 'rgba(0, 26, 77, 0.4)',
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 20,
+    marginTop: 10,
   },
   encryptionText: {
-    color: '#8696a0',
+    color: '#94a3b8',
     fontSize: 12.5,
     marginLeft: 6,
     fontWeight: '500',
   },
+  videoHeaderOverlay: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 999,
+  },
+  videoPartnerName: {
+    color: '#fff',
+    fontSize: 22,
+    fontWeight: 'bold',
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
+  videoTimerText: {
+    color: '#0099ff',
+    fontSize: 15,
+    fontWeight: '600',
+    marginTop: 4,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
+  },
   controls: { 
     position: 'absolute', 
-    bottom: 50, 
+    bottom: 40, 
+    left: 15,
+    right: 15,
     flexDirection: 'row', 
-    width: '100%', 
     justifyContent: 'space-evenly', 
     alignItems: 'center',
-    backgroundColor: 'transparent',
+    borderRadius: 30,
+    paddingVertical: 14,
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 5,
+  },
+  voiceControls: {
+    backgroundColor: '#001A4D', // Brand Navy
+  },
+  videoControls: {
+    backgroundColor: 'rgba(0, 26, 77, 0.8)', // Navy with alpha
   },
   endCall: { 
-    backgroundColor: '#ea0038', 
-    padding: 18, 
-    borderRadius: 50,
+    backgroundColor: '#ff3333', // Danger Red
+    borderRadius: 26,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 52,
+    height: 52,
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -339,24 +563,27 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
   },
   controlBtn: { 
-    backgroundColor: '#202c33', 
-    padding: 14, 
-    borderRadius: 50,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)', 
+    borderRadius: 26,
     alignItems: 'center',
     justifyContent: 'center',
-    width: 58,
-    height: 58,
+    width: 52,
+    height: 52,
   },
   activeControlBtn: {
-    backgroundColor: '#00a884',
+    backgroundColor: '#0099ff', // Info Blue
+  },
+  controlBtnWrapper: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 68,
   },
   controlLabel: {
     color: '#fff',
-    fontSize: 10,
-    marginTop: 4,
+    fontSize: 11,
+    marginTop: 6,
     fontWeight: '600',
-    position: 'absolute',
-    bottom: -20,
+    textAlign: 'center',
   }
 });
 

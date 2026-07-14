@@ -24,10 +24,50 @@ export default function RequestDetails({ navigation, route }: { navigation: any;
   const [paymentLimit, setPaymentLimit] = useState<string>('30'); // Default to 30 minutes
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
-  const clientName = requestData?.client?.name || "Client";
-  const caseCategory = requestData?.caseCategory || "General";
-  const caseSubject = requestData?.caseSubject || "######";
-  const caseDescription = requestData?.caseDescription || "No description provided.";
+  const [fetchedData, setFetchedData] = useState<any>(null);
+  const [loadingDetails, setLoadingDetails] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (!requestData && bookingId) {
+      const fetchDetails = async () => {
+        try {
+          setLoadingDetails(true);
+          let token = await AsyncStorage.getItem('userToken');
+          token = token?.trim().replace(/^["']|["']$/g, '') || '';
+          const response = await fetch(`${BASE_URL}/api/bookings/status/${bookingId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'ngrok-skip-browser-warning': 'true'
+            }
+          });
+          const res = await response.json();
+          if (res.success) {
+            setFetchedData(res.booking);
+          }
+        } catch (e) {
+          console.log("Error loading request details:", e);
+        } finally {
+          setLoadingDetails(false);
+        }
+      };
+      fetchDetails();
+    }
+  }, [bookingId, requestData]);
+
+  const activeData = requestData || fetchedData;
+  const clientName = activeData?.clientId?.name || activeData?.client?.name || activeData?.clientName || "Client";
+  const caseCategory = activeData?.caseCategory || "General";
+  const caseSubject = activeData?.caseSubject || "######";
+  const caseDescription = activeData?.caseDescription || "No description provided.";
+
+  if (loadingDetails) {
+    return (
+      <SafeAreaView style={[s.container, { backgroundColor: COLORS.white, justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </SafeAreaView>
+    );
+  }
 
   const handleStatusUpdate = async (status: 'accepted' | 'rejected') => {
     try {

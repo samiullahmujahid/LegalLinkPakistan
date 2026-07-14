@@ -13,6 +13,8 @@ interface MyInputProps {
   error?: string;
   containerStyle?: StyleProp<ViewStyle>; 
   inputStyle?: StyleProp<TextStyle>;
+  multiline?: boolean;
+  numberOfLines?: number;
 }
 
 export const MyInput: React.FC<MyInputProps> = ({
@@ -26,12 +28,15 @@ export const MyInput: React.FC<MyInputProps> = ({
   error,
   containerStyle,
   inputStyle,
+  multiline = false,
+  numberOfLines,
 }) => {
   return (
     <View style={[styles.wrapper, containerStyle]}>
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={[
         styles.defaultContainer, 
+        multiline ? { height: 100, paddingTop: 10, paddingBottom: 10 } : null,
         error ? styles.errorBorder : null,
       ]}>
         <TextInput
@@ -42,7 +47,9 @@ export const MyInput: React.FC<MyInputProps> = ({
           secureTextEntry={isPassword}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
-          style={[styles.defaultInput, inputStyle]}
+          multiline={multiline}
+          numberOfLines={numberOfLines}
+          style={[styles.defaultInput, multiline ? { textAlignVertical: 'top', height: '100%' } : null, inputStyle]}
         />
       </View>
       {error && <Text style={styles.errorText}>{error}</Text>}
