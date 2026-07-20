@@ -261,23 +261,41 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       const userStr = await AsyncStorage.getItem('user');
       if (userStr) {
         const userObj = JSON.parse(userStr);
-        setUserId(userObj._id);
-        setUserRole(userObj.role);
+        const myUserId = (userObj.id || userObj._id || '').toString();
+        if (myUserId) {
+          setUserId(myUserId);
+          setUserRole(userObj.role);
 
-        // Register socket
-        socket.emit('registerUser', userObj._id);
-        console.log('[NotificationProvider] User socket registered:', userObj._id);
+          // Register socket
+          socket.emit('registerUser', myUserId);
+          console.log('[NotificationProvider] User socket registered:', myUserId);
+        }
       }
       await fetchNotifications();
     };
 
     setupNotifications();
 
+    const handleConnect = async () => {
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+        const userObj = JSON.parse(userStr);
+        const myUserId = (userObj.id || userObj._id || '').toString();
+        if (myUserId) {
+          socket.emit('registerUser', myUserId);
+          console.log('[NotificationProvider] Socket reconnected & user registered:', myUserId);
+        }
+      }
+    };
+
+    socket.on('connect', handleConnect);
+
     // Periodic check for new session items (every 15s)
     const interval = setInterval(setupNotifications, 15000);
 
     return () => {
       clearInterval(interval);
+      socket.off('connect', handleConnect);
     };
   }, []);
 
@@ -297,17 +315,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         // Foreground: Animated Slide-down Alert Banner
         showToast(notification);
       } else {
-        // Background: Trigger OS Local System Banner (EXCEPT chat type)
-        if (notification.type !== 'chat') {
-          await NotificationService.displayNotification(
-            notification.title,
-            notification.body,
-            notification.type,
-            notification.data
-          );
-        } else {
-          console.log('[NotificationProvider] Suppressing background chat notification in native tray');
-        }
+        // Background: Trigger OS Local System Banner (including chat notifications)
+        await NotificationService.displayNotification(
+          notification.title,
+          notification.body,
+          notification.type,
+          notification.data
+        );
       }
     };
 

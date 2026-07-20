@@ -31,10 +31,27 @@ const ChatScreen = ({ route, navigation }: any) => {
   const [playingMsgId, setPlayingMsgId] = useState<string | null>(null);
   const activeSound = useRef<Sound | null>(null);
   const [selectedMsgIds, setSelectedMsgIds] = useState<string[]>([]);
+  const [replyingTo, setReplyingTo] = useState<any>(null);
   const [blink, setBlink] = useState(true);
 
   const flatListRef = useRef<FlatList>(null);
   const messagesRef = useRef(messages);
+
+  const handleReplyToMessage = (msg: any) => {
+    const isMe = (msg.sender === (currentUser?.id || currentUser?._id)) || (msg.sender?._id === (currentUser?.id || currentUser?._id));
+    const senderName = isMe ? 'You' : (partnerName || 'Contact');
+    
+    let snippet = msg.text;
+    if (msg.type === 'audio') snippet = '🎙️ Voice Message';
+    else if (msg.type === 'image' || msg.type === 'file') snippet = `📎 Attachment (${msg.fileName || 'Photo'})`;
+
+    setReplyingTo({
+      id: msg._id || msg.id,
+      senderName,
+      text: snippet,
+      type: msg.type
+    });
+  };
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -340,10 +357,12 @@ const ChatScreen = ({ route, navigation }: any) => {
       bookingId,
       text: inputText,
       sender: currentUser?.id || currentUser?._id,
-      type: 'text'
+      type: 'text',
+      replyTo: replyingTo ? replyingTo : null
     });
 
     setInputText('');
+    setReplyingTo(null);
   };
 
   const selectDocument = () => {
@@ -620,15 +639,10 @@ const ChatScreen = ({ route, navigation }: any) => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 60 : 0}
-    >
-      <View style={chatStyles.container}>
-        <StatusBar barStyle="light-content" />
-        <View style={[chatStyles.header, { paddingTop: headerPaddingTop, paddingBottom: 15 }]}>
+  const content = (
+    <View style={chatStyles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#001a4d" />
+      <View style={[chatStyles.header, { paddingTop: headerPaddingTop, paddingBottom: 15 }]}>
           {selectedMsgIds.length > 0 ? (
             <>
               <TouchableOpacity onPress={() => setSelectedMsgIds([])}>
@@ -640,6 +654,15 @@ const ChatScreen = ({ route, navigation }: any) => {
                 </Text>
               </View>
               <View style={chatStyles.headerIcons}>
+                {selectedMsgIds.length === 1 && (
+                  <TouchableOpacity onPress={() => {
+                    const msg = messages.find(m => (m._id || m.id) === selectedMsgIds[0]);
+                    if (msg) handleReplyToMessage(msg);
+                    setSelectedMsgIds([]);
+                  }} style={{ marginRight: 15 }}>
+                    <Icon name="reply" size={24} color="#fff" />
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity onPress={deleteSelectedMessages}>
                   <Icon name="delete" size={25} color="#ff3333" style={{ marginRight: 5 }} />
                 </TouchableOpacity>
@@ -696,13 +719,32 @@ const ChatScreen = ({ route, navigation }: any) => {
                 activeOpacity={0.9}
                 onLongPress={() => {
                   if (item.type !== 'deleted' && item.type !== 'call_log') {
-                    setSelectedMsgIds((prev) => {
-                      if (prev.includes(msgId)) {
-                        return prev.filter((id) => id !== msgId);
-                      } else {
-                        return [...prev, msgId];
-                      }
-                    });
+                    Alert.alert(
+                      "Message Options",
+                      "Choose an action for this message",
+                      [
+                        {
+                          text: "Reply",
+                          onPress: () => handleReplyToMessage(item)
+                        },
+                        {
+                          text: "Select for Delete",
+                          onPress: () => {
+                            setSelectedMsgIds((prev) => {
+                              if (prev.includes(msgId)) {
+                                return prev.filter((id) => id !== msgId);
+                              } else {
+                                return [...prev, msgId];
+                              }
+                            });
+                          }
+                        },
+                        {
+                          text: "Cancel",
+                          style: "cancel"
+                        }
+                      ]
+                    );
                   }
                 }}
                 onPress={() => {
@@ -826,6 +868,12 @@ const ChatScreen = ({ route, navigation }: any) => {
                   </View>
                 ) : (
                   <View style={[chatStyles.msgBubble, isMe ? chatStyles.myMsg : chatStyles.theirMsg]}>
+                    {item.replyTo && (
+                      <View style={chatStyles.quotedBox}>
+                        <Text style={chatStyles.quotedName}>{item.replyTo.senderName}</Text>
+                        <Text style={chatStyles.quotedText} numberOfLines={2}>{item.replyTo.text}</Text>
+                      </View>
+                    )}
                     <Text style={isMe ? chatStyles.myMsgText : chatStyles.theirMsgText}>{item.text}</Text>
                     <View style={chatStyles.msgMeta}>
                       <Text style={chatStyles.msgTimeText}>{formatTime(item.createdAt)}</Text>
@@ -840,8 +888,21 @@ const ChatScreen = ({ route, navigation }: any) => {
           }}
         />
 
+        {/* WhatsApp-Style Quoted Reply Preview Banner */}
+        {replyingTo && (
+          <View style={chatStyles.replyPreviewContainer}>
+            <View style={chatStyles.replyPreviewContent}>
+              <Text style={chatStyles.replyPreviewTitle}>Replying to {replyingTo.senderName}</Text>
+              <Text style={chatStyles.replyPreviewText} numberOfLines={1}>{replyingTo.text}</Text>
+            </View>
+            <TouchableOpacity onPress={() => setReplyingTo(null)} style={chatStyles.replyPreviewCancel}>
+              <Icon name="close" size={18} color="#64748b" />
+            </TouchableOpacity>
+          </View>
+        )}
+
         {isRecording ? (
-          <View style={[chatStyles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+          <View style={[chatStyles.inputContainer, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 6) : 6 }]}>
             <View style={chatStyles.recordingPill}>
               <Icon name="microphone" size={22} color="#ff3b30" style={{ opacity: blink ? 1 : 0.2, marginRight: 8 }} />
               <Text style={[chatStyles.recordingTimer, { color: '#111', fontWeight: '700' }]}>{formatDuration(recordingSeconds)}</Text>
@@ -856,7 +917,7 @@ const ChatScreen = ({ route, navigation }: any) => {
           </View>
         ) : (
           <View>
-            <View style={[chatStyles.inputContainer, { paddingBottom: Math.max(insets.bottom, 8) }]}>
+            <View style={[chatStyles.inputContainer, { paddingBottom: Platform.OS === 'ios' ? Math.max(insets.bottom, 6) : 6 }]}>
               <View style={chatStyles.inputPill}>
                 <TouchableOpacity
                   style={chatStyles.inputIcon}
@@ -949,7 +1010,26 @@ const ChatScreen = ({ route, navigation }: any) => {
           </Modal>
         )}
       </View>
-    </KeyboardAvoidingView>
+  );
+
+  const keyboardOffset = Platform.OS === 'ios' ? (insets.top > 0 ? insets.top + 45 : 60) : 0;
+
+  if (Platform.OS === 'ios') {
+    return (
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior="padding"
+        keyboardVerticalOffset={keyboardOffset}
+      >
+        {content}
+      </KeyboardAvoidingView>
+    );
+  }
+
+  return (
+    <View style={{ flex: 1, backgroundColor: '#001a4d' }}>
+      {content}
+    </View>
   );
 };
 

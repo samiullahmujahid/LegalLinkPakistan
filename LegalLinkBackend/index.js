@@ -105,7 +105,8 @@ io.on('connection', (socket) => {
         sender: data.sender,
         text: data.text,
         type: data.type || 'text',
-        fileName: data.fileName || null
+        fileName: data.fileName || null,
+        replyTo: data.replyTo || null
       });
       await newMessage.save();
       io.to(data.bookingId).emit('receiveMessage', newMessage);

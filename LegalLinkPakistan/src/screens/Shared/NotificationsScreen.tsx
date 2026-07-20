@@ -29,6 +29,9 @@ export const NotificationsScreen = () => {
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // Filter out chat notifications so only appointment & complaint status alerts appear in feed
+  const filteredNotifications = notifications.filter((n: any) => n.type !== 'chat');
+
   // ==========================================
   // HELPER & UTILITY FUNCTIONS
   // ==========================================
@@ -76,20 +79,70 @@ export const NotificationsScreen = () => {
       if (diffMins < 60) return `${diffMins}m ago`;
       if (diffHours < 24) return `${diffHours}h ago`;
       if (diffDays === 1) return 'Yesterday';
-      return date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
-    } catch {
+      if (diffDays < 7) return `${diffDays}d ago`;
+
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    } catch (e) {
       return '';
     }
   };
 
-  const handleItemPress = (item: any) => {
-    if (!item.isRead) {
-      markAsRead(item._id);
-    }
-    handleNotificationRedirect(item.data, item.type);
+  const toggleSelectionMode = () => {
+    setIsSelectionMode(!isSelectionMode);
+    setSelectedIds([]);
   };
 
-  const renderRightActions = (progress: any, dragX: any, id: string) => {
+  const toggleSelectNotification = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter(item => item !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.length === filteredNotifications.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredNotifications.map(n => n._id));
+    }
+  };
+
+  const handleBatchDelete = async () => {
+    if (selectedIds.length === 0) return;
+
+    Alert.alert(
+      "Delete Notifications",
+      `Are you sure you want to delete ${selectedIds.length} notification(s)?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            await deleteMultipleNotifications(selectedIds);
+            setSelectedIds([]);
+            if (filteredNotifications.length <= selectedIds.length) {
+              setIsSelectionMode(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleItemPress = (item: any) => {
+    if (isSelectionMode) {
+      toggleSelectNotification(item._id);
+    } else {
+      if (!item.isRead) {
+        markAsRead(item._id);
+      }
+      handleNotificationRedirect(item.data, item.type);
+    }
+  };
+
+  const renderRightActions = (id: string) => {
     return (
       <TouchableOpacity 
         style={styles.deleteSwipeBtn} 
@@ -102,85 +155,20 @@ export const NotificationsScreen = () => {
     );
   };
 
-  const toggleSelectNotification = (id: string) => {
-    if (selectedIds.includes(id)) {
-      const filtered = selectedIds.filter(item => item !== id);
-      setSelectedIds(filtered);
-      if (filtered.length === 0) {
-        setIsSelectionMode(false);
-      }
-    } else {
-      setSelectedIds(prev => [...prev, id]);
-    }
-  };
-
-  const handleLongPress = (id: string) => {
-    if (!isSelectionMode) {
-      setIsSelectionMode(true);
-      setSelectedIds([id]);
-    }
-  };
-
-  const handlePressItem = (item: any) => {
-    if (isSelectionMode) {
-      toggleSelectNotification(item._id);
-    } else {
-      handleItemPress(item);
-    }
-  };
-
-  const handleBatchDelete = () => {
-    if (selectedIds.length === 0) return;
-    Alert.alert(
-      "Delete Selected",
-      `Are you sure you want to delete ${selectedIds.length} selected notifications?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete", 
-          style: "destructive",
-          onPress: async () => {
-            await deleteMultipleNotifications(selectedIds);
-            setSelectedIds([]);
-            setIsSelectionMode(false);
-          }
-        }
-      ]
-    );
-  };
-
-  const handleCancelSelection = () => {
-    setSelectedIds([]);
-    setIsSelectionMode(false);
-  };
-
-  const handleSelectAll = () => {
-    if (selectedIds.length === notifications.length) {
-      setSelectedIds([]);
-      setIsSelectionMode(false);
-    } else {
-      setSelectedIds(notifications.map(n => n._id));
-    }
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <Header 
-        title={isSelectionMode ? `${selectedIds.length} Selected` : "Notifications"} 
-        showBackButton={!isSelectionMode}
-        leftElement={
-          isSelectionMode ? (
-            <TouchableOpacity onPress={handleCancelSelection} style={{ padding: 4 }}>
-              <Icon name="close" size={24} color="#fff" />
-            </TouchableOpacity>
-          ) : undefined
-        }
-        rightElement={
+        title={isSelectionMode ? `${selectedIds.length} Selected` : "Notifications"}
+        leftIcon={isSelectionMode ? "close" : "arrow-left"}
+        onLeftPress={isSelectionMode ? toggleSelectionMode : () => handleNotificationRedirect(null, 'back')}
+        rightIcon={isSelectionMode ? undefined : "select-all"}
+        onRightPress={isSelectionMode ? undefined : toggleSelectionMode}
+        rightComponent={
           isSelectionMode ? (
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <TouchableOpacity onPress={handleSelectAll} style={[styles.readAllBtn, { marginRight: 10 }]}>
                 <Text style={styles.readAllText}>
-                  {selectedIds.length === notifications.length ? "Deselect" : "Select All"}
+                  {selectedIds.length === filteredNotifications.length ? "Deselect" : "Select All"}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity 
@@ -193,9 +181,9 @@ export const NotificationsScreen = () => {
               </TouchableOpacity>
             </View>
           ) : (
-            notifications.length > 0 ? (
+            filteredNotifications.length > 0 ? (
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {notifications.some(n => !n.isRead) && (
+                {filteredNotifications.some(n => !n.isRead) && (
                   <TouchableOpacity onPress={markAllAsRead} style={[styles.readAllBtn, { marginRight: 10 }]}>
                     <Text style={styles.readAllText}>Mark read</Text>
                   </TouchableOpacity>
@@ -210,7 +198,7 @@ export const NotificationsScreen = () => {
       />
 
       <FlatList
-        data={notifications}
+        data={filteredNotifications}
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.listContainer}
         showsVerticalScrollIndicator={false}
@@ -348,12 +336,10 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#f1f5f9',
-    shadowColor: '#0f172a',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 2,
+    borderColor: '#e2e8f0',
+    marginBottom: 10,
+    elevation: 0,
+    shadowOpacity: 0,
   },
   deleteSwipeBtn: {
     backgroundColor: COLORS.danger,

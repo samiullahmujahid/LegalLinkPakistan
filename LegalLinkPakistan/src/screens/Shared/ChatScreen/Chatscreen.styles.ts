@@ -242,6 +242,61 @@ export const chatStyles = StyleSheet.create({
     shadowRadius: 2,
   },
 
+  // Reply preview banner above input bar
+  replyPreviewContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderLeftWidth: 4,
+    borderLeftColor: '#001a4d',
+    borderRadius: 8,
+    marginHorizontal: 12,
+    marginBottom: 6,
+    padding: 8,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+  },
+  replyPreviewContent: {
+    flex: 1,
+    paddingRight: 6,
+  },
+  replyPreviewTitle: {
+    color: '#001a4d',
+    fontSize: 12.5,
+    fontWeight: 'bold',
+  },
+  replyPreviewText: {
+    color: '#64748b',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  replyPreviewCancel: {
+    padding: 4,
+  },
+
+  // Quoted Box inside Message Bubbles
+  quotedBox: {
+    backgroundColor: 'rgba(0, 26, 77, 0.07)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#001a4d',
+    borderRadius: 6,
+    padding: 6,
+    marginBottom: 6,
+  },
+  quotedName: {
+    color: '#001a4d',
+    fontSize: 11.5,
+    fontWeight: 'bold',
+  },
+  quotedText: {
+    color: '#475569',
+    fontSize: 12,
+    marginTop: 1,
+  },
+
   // Recording bar UI
   recordingPill: {
     flex: 1,

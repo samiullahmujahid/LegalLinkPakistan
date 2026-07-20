@@ -12,6 +12,12 @@ const messageSchema = new mongoose.Schema({
     text: { type: String, required: true },
     type: { type: String, default: 'text' }, 
     fileName: { type: String },
+    replyTo: {
+        id: { type: String },
+        senderName: { type: String },
+        text: { type: String },
+        type: { type: String }
+    },
     deletedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     createdAt: { type: Date, default: Date.now }
 });
