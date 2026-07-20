@@ -39,8 +39,6 @@ const uploadFields = upload.fields([
 // ==========================================
 router.post('/register', uploadFields, authController.registerUser);
 router.post('/login', authController.loginUser);
-router.post('/google', authController.googleLogin);
-router.post('/facebook', authController.facebookLogin);
 router.post('/verify-otp', authController.verifyAdminOTP);
 router.get('/lawyers', authController.getAllLawyers);
 router.put('/profile/update', protect, authController.updateProfile);
