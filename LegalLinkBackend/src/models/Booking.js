@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// BOOKING SCHEMA DEFINITION
+// ==========================================
 const BookingSchema = new mongoose.Schema({
     clientId: { 
         type: mongoose.Schema.Types.ObjectId,
@@ -72,4 +78,7 @@ const BookingSchema = new mongoose.Schema({
     timestamps: true 
 });
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 module.exports = mongoose.model('Booking', BookingSchema);

@@ -1,52 +1,54 @@
+// ==========================================
+// IMPORTS & COMPONENT INCLUDES
+// ==========================================
 import React from 'react';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Text, View } from 'react-native';
 
 export const navigationRef = createNavigationContainerRef<any>();
 
-// ================= AUTH =================
+// Auth Screens
 import RoleSelectionScreen from '../screens/Shared/RoleSelectionScreen';
 import LoginScreen from '../screens/Shared/LoginScreen';
 import RegistrationSuccess from '../screens/Shared/RegistrationSuccess';
 
-// ================= AI =================
+// AI Screens
 import AiChatbotScreen from '../screens/Shared/AiChatbotScreen';
 
-// ================= ADMIN =================
+// Admin Screens
 import AdminVerify from '../screens/Admin/AdminVerify';
 import AdminDashboard from '../screens/Admin/AdminDashboard';
 import NewLawyerVerification from '../screens/Admin/NewLawyerVerification';
 import ComplaintHandling from '../screens/Admin/ComplaintHandling'; 
-import ComplaintDetails from '../screens/Shared/ComplaintScreen/ComplaintDetails'; // Added
+import ComplaintDetails from '../screens/Shared/ComplaintScreen/ComplaintDetails';
 
-// ================= CLIENT =================
+// Client Screens
 import ClientSignup from '../screens/Client/Registration/ClientSignup';
 import ClientDashboard from '../screens/Client/ClientDashboard';
 
-// ================= LAWYER =================
-import LawyerProfile from '../screens/Client/Booking/LawyerProfile';
+// Lawyer Screens
+import LawyerProfile from '../screens/Shared/LawyerProfile';
 import CaseDetails from '../screens/Client/Booking/CaseDetails';
 import AppointmentSummary from '../screens/Client/Booking/AppointmentSummary';
 import Payment from '../screens/Client/Booking/Payment';
 
 import AppointmentStatus from '../screens/Shared/TrackAppointment/AppointmentStatus';
 import TrackAppointment from '../screens/Shared/TrackAppointment/TrackAppointment';
-import ComplaintStatus from '../screens/Shared/ComplaintScreen/ComplaintStatus'; // Added
+import ComplaintStatus from '../screens/Shared/ComplaintScreen/ComplaintStatus';
 
-// ================= LAWYER ONBOARD =================
+// Lawyer Onboarding
 import LawyerSignup from '../screens/Lawyer/Registration/LawyerSignup';
 
 import LawyerStatus from '../screens/Lawyer/LawyerStatus';
-import LawyerDetailVerify from '../screens/Lawyer/LawyerDetailVerify';
+import LawyerDetailVerify from '../screens/Admin/LawyerDetailVerify';
 import LawyerDashboard from '../screens/Lawyer/LawyerDashboard';
 
-// ================= REQUESTS =================
+// Appointment & Wallet Management
 import ClientRequests from '../screens/Lawyer/AppointmentManagement/ClientRequests';
 import RequestDetails from '../screens/Lawyer/AppointmentManagement/RequestDetails';
 import Wallet from '../screens/Lawyer/Wallet/Wallet';
 
-// ================= CHAT & COMPLAINTS =================
+// Chat & Notifications
 import ChatScreen from '../screens/Shared/ChatScreen/ChatScreen';
 import ChatsListScreen from '../screens/Shared/ChatScreen/ChatsListScreen';
 import CallScreen from '../screens/Shared/ChatScreen/CallScreen';
@@ -57,7 +59,9 @@ import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import ProfileScreen from '../screens/Shared/ProfileScreen';
 import RecommendedLawyersScreen from '../screens/Client/Booking/RecommendedLawyersScreen';
 
-// ================= TYPES =================
+// ==========================================
+// NAVIGATION TYPES
+// ==========================================
 export type RootStackParamList = {
   RoleSelection: undefined;
   Login: { role: 'Client' | 'Lawyer' | 'Admin' };
@@ -67,7 +71,7 @@ export type RootStackParamList = {
   AdminDashboard: undefined;
   NewLawyerVerification: undefined;
   ComplaintHandling: undefined; 
-  ComplaintDetails: { id: string }; // Added
+  ComplaintDetails: { id: string };
 
   ClientSignup: undefined;
   ClientDashboard: undefined;
@@ -78,11 +82,10 @@ export type RootStackParamList = {
   SecurePaymentScreen: { bookingId: string; amount: number };
 
   AppointmentStatus: { bookingId: string; role?: 'client' | 'lawyer' };
-  TrackAppointment: { role: 'client' | 'lawyer' }; // Updated
-  ComplaintStatus: undefined; // Added
+  TrackAppointment: { role: 'client' | 'lawyer' };
+  ComplaintStatus: undefined;
 
   LawyerSignup: undefined;
-
 
   LawyerStatus: { status: string; reason?: string };
   LawyerDetailVerify: { lawyerId: string };
@@ -113,6 +116,9 @@ export type RootStackParamList = {
   NotificationsScreen: undefined;
 };
 
+// ==========================================
+// STACK NAVIGATOR CONFIG & COMPONENT
+// ==========================================
 const Stack = createStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
@@ -142,7 +148,6 @@ const AppNavigator = () => {
         {/* LAWYER */}
         <Stack.Screen name="LawyerSignup" component={LawyerSignup} />
 
-
         <Stack.Screen name="LawyerStatus" component={LawyerStatus} />
         <Stack.Screen name="LawyerDetailVerify" component={LawyerDetailVerify} />
         <Stack.Screen name="LawyerDashboard" component={LawyerDashboard} />
@@ -168,7 +173,7 @@ const AppNavigator = () => {
         <Stack.Screen name="ComplaintScreen" component={ComplaintScreen} />
         <Stack.Screen name="CallScreen" component={CallScreen} />
 
-        {/* AI */}
+        {/* AI & UTILITY */}
         <Stack.Screen name="AiChatbotScreen" component={AiChatbotScreen} />
         <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
         <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
@@ -179,4 +184,7 @@ const AppNavigator = () => {
   );
 };
 
+// ==========================================
+// EXPORTS
+// ==========================================
 export default AppNavigator;

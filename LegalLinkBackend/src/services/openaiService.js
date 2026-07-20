@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & OPENAI CLIENT INIT
+// ==========================================
 const { OpenAI } = require("openai");
 
 // Initialize OpenAI client
@@ -5,6 +8,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY, // Ensure process.env contains this exact key name
 });
 
+// ==========================================
+// 1. TEXT CHAT COMPLETION SERVICE
+// ==========================================
 /**
  * Generate response using OpenAI
  * @param {string} prompt - User prompt/query
@@ -34,11 +40,14 @@ const generateOpenAIResponse = async (prompt) => {
     return response.choices[0].message.content;
   } catch (error) {
     console.error("OpenAI Service Error:", error.message);
-    // Detailed error message frontend ya logs ke liye
+    // Detailed error message for frontend or logs
     throw new Error("Failed to communicate with AI model.");
   }
 };
 
+// ==========================================
+// 2. VISION DOCUMENT ANALYSIS SERVICE
+// ==========================================
 /**
  * AI image/document vision analysis function
  * @param {string} prompt - User request / query
@@ -81,6 +90,9 @@ const generateOpenAIVisionResponse = async (prompt, base64Image) => {
   }
 };
 
+// ==========================================
+// 3. DALL-E IMAGE GENERATION SERVICE
+// ==========================================
 /**
  * DALL-E Image Generation function
  * @param {string} prompt - Prompt describing the image
@@ -101,11 +113,14 @@ const generateOpenAIImage = async (prompt) => {
 
     return response.data[0].url;
   } catch (error) {
-    console.error("OpenAI DALL-E Error:", error.message);
+    console.error("OpenAI Image Service Error:", error.message);
     throw new Error("Failed to generate image.");
   }
 };
 
+// ==========================================
+// EXPORTS
+// ==========================================
 module.exports = { 
   generateOpenAIResponse,
   generateOpenAIVisionResponse,

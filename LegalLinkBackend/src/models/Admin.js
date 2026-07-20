@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// ADMIN SCHEMA DEFINITION
+// ==========================================
 const AdminSchema = new mongoose.Schema({
   email: { 
     type: String, 
@@ -23,4 +29,7 @@ const AdminSchema = new mongoose.Schema({
   }
 }, { timestamps: true }); // Automatically adds createdAt and updatedAt
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 module.exports = mongoose.model('Admin', AdminSchema, 'admins');

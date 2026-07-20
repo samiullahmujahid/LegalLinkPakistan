@@ -15,7 +15,8 @@ const {
     getLawyerWallet,
     completeAppointment,
     deleteBooking,
-    createInstantChatBooking
+    createInstantChatBooking,
+    getLawyerReviews
 } = require('../controllers/bookingController');
 
 const { protect } = require('../middlewares/authMiddleware'); 
@@ -112,6 +113,7 @@ router.post('/complete/:bookingId', protect, completeAppointment);
 router.get('/lawyer-bookings', protect, getLawyerBookings); 
 router.get('/lawyer-active-count/:lawyerId', protect, getLawyerActiveCount);
 router.get('/lawyer/:lawyerId', protect, getLawyerBookings); 
+router.get('/reviews/:lawyerId', protect, getLawyerReviews); 
 router.put('/lawyer/update-status/:bookingId', protect, updateBookingStatus);
 router.get('/lawyer/wallet/:lawyerId', protect, getLawyerWallet);
 
@@ -255,8 +257,8 @@ router.get('/stripe/onboard', protect, async (req, res) => {
         // Create the onboarding link
         const accountLink = await stripe.accountLinks.create({
             account: stripeAccountId,
-            refresh_url: `https://mug-work-public.ngrok-free.dev/api/bookings/stripe/refresh?lawyerId=${userId}`,
-            return_url: `https://mug-work-public.ngrok-free.dev/api/bookings/stripe/return?lawyerId=${userId}`,
+            refresh_url: `https://fresh-books-return.loca.lt/api/bookings/stripe/refresh?lawyerId=${userId}`,
+            return_url: `https://fresh-books-return.loca.lt/api/bookings/stripe/return?lawyerId=${userId}`,
             type: 'account_onboarding',
         });
 
@@ -335,8 +337,8 @@ router.get('/stripe/refresh', async (req, res) => {
 
         const accountLink = await stripe.accountLinks.create({
             account: lawyer.stripeAccountId,
-            refresh_url: `https://mug-work-public.ngrok-free.dev/api/bookings/stripe/refresh?lawyerId=${lawyerId}`,
-            return_url: `https://mug-work-public.ngrok-free.dev/api/bookings/stripe/return?lawyerId=${lawyerId}`,
+            refresh_url: `https://fresh-books-return.loca.lt/api/bookings/stripe/refresh?lawyerId=${lawyerId}`,
+            return_url: `https://fresh-books-return.loca.lt/api/bookings/stripe/return?lawyerId=${lawyerId}`,
             type: 'account_onboarding',
         });
 

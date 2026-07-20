@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, FlatList, StyleSheet, TextInput, TouchableOpacity, 
-  ActivityIndicator, Image, SafeAreaView 
+  ActivityIndicator, Image, SafeAreaView, Alert 
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../../../components/Common/Header';
 import { COLORS } from '../../../theme/theme';
+import StarRating from '../../../components/Common/StarRating';
 
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
 
@@ -134,23 +135,6 @@ export const RecommendedLawyersScreen = ({ navigation }: any) => {
     setFilteredLawyers(filtered);
   };
 
-  const renderStars = (rating: number) => {
-    const stars = [];
-    const fullStars = Math.floor(rating);
-    const hasHalf = rating % 1 >= 0.5;
-
-    for (let i = 1; i <= 5; i++) {
-      if (i <= fullStars) {
-        stars.push(<Icon key={i} name="star" size={15} color="#eab308" />);
-      } else if (i === fullStars + 1 && hasHalf) {
-        stars.push(<Icon key={i} name="star-half-full" size={15} color="#eab308" />);
-      } else {
-        stars.push(<Icon key={i} name="star-outline" size={15} color="#cbd5e1" />);
-      }
-    }
-    return stars;
-  };
-
   return (
     <SafeAreaView style={styles.container}>
       <Header title="Recommended Lawyers" />
@@ -253,7 +237,7 @@ export const RecommendedLawyersScreen = ({ navigation }: any) => {
                   <View style={styles.footerRow}>
                     {/* Stars rating */}
                     <View style={styles.ratingContainer}>
-                      {renderStars(item.averageRating || 0)}
+                      <StarRating rating={item.averageRating || 0} size={15} activeColor="#eab308" />
                       <Text style={styles.ratingText}>
                         ({item.totalReviews || 0})
                       </Text>

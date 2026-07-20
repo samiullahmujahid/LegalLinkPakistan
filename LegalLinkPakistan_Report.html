@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LegalLink Pakistan - Full Flow Process Report</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+        
+        :root {
+            --primary: #001a4d;
+            --primary-light: #003399;
+            --secondary: #0099ff;
+            --success: #137333;
+            --success-bg: #e6f4ea;
+            --accent: #d9534f;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --bg-light: #f8fafc;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            background-color: #fff;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+        }
+
+        .cover-page {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, var(--primary) 0%, #000c24 100%);
+            color: #fff;
+            text-align: center;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        .cover-logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 24px;
+        }
+
+        .cover-title {
+            font-size: 42px;
+            font-weight: 800;
+            margin: 0 0 12px 0;
+            letter-spacing: -1px;
+            color: #fff;
+        }
+
+        .cover-subtitle {
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--secondary);
+            margin: 0 0 40px 0;
+        }
+
+        .cover-meta {
+            margin-top: auto;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 24px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            color: var(--text-muted);
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+
+        h1, h2, h3, h4 {
+            color: var(--primary);
+            font-weight: 700;
+            margin-top: 40px;
+            margin-bottom: 16px;
+        }
+
+        h1 {
+            font-size: 28px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 8px;
+            margin-top: 60px;
+        }
+
+        h2 {
+            font-size: 20px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #334155;
+        }
+
+        .card {
+            background-color: var(--bg-light);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary-light);
+        }
+
+        .flow-step {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .flow-step:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 40px;
+            bottom: -20px;
+            width: 2px;
+            background-color: var(--border);
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 20px;
+            background-color: var(--primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .step-content {
+            padding-top: 6px;
+        }
+
+        .step-title {
+            font-weight: 700;
+            font-size: 16px;
+            margin-bottom: 4px;
+            color: var(--primary);
+        }
+
+        .step-desc {
+            color: #475569;
+            font-size: 14px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .badge-client { background-color: #e2e8f0; color: #475569; }
+        .badge-lawyer { background-color: #e1eafd; color: #001a4d; }
+        .badge-admin { background-color: #fce8e6; color: #a51d24; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            margin-bottom: 30px;
+        }
+
+        th, td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--bg-light);
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        @media print {
+            body {
+                background-color: #fff;
+                font-size: 12pt;
+            }
+            .cover-page {
+                height: 100vh;
+                page-break-after: always;
+            }
+            .container {
+                max-width: 100%;
+                padding: 0;
+            }
+            .no-print {
+                display: none;
+            }
+            h1, h2, h3, .card, table, .flow-step {
+                page-break-inside: avoid;
+            }
+        }
+        
+        .print-btn-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+        }
+
+        .btn {
+            background-color: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 153, 255, 0.3);
+            transition: all 0.2s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 153, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="print-btn-container no-print">
+        <button class="btn" onclick="window.print()">Export to PDF</button>
+    </div>
+
+    <!-- Cover Page -->
+    <div class="cover-page">
+        <svg class="cover-logo" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 22H22L12 2Z" fill="#0099ff"/>
+            <path d="M12 6L5 20H19L12 6Z" fill="#001a4d"/>
+        </svg>
+        <h1 class="cover-title">LegalLink Pakistan</h1>
+        <div class="cover-subtitle">Complete Architecture & Core Process Flow Report</div>
+        <div style="font-size: 16px; font-weight: 300; max-width: 500px; margin: 0 auto 60px auto; color: #94a3b8;">
+            A detailed structural documentation of the LegalLink platform, including user pathways, real-time messaging, payments, and verification cycles.
+        </div>
+        <div class="cover-meta">
+            <div><strong>DEVELOPER:</strong> Antigravity AI</div>
+            <div><strong>DATE:</strong> July 2026</div>
+            <div><strong>VERSION:</strong> 1.1.0</div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="container">
+        
+        <h1>1. Executive Summary</h1>
+        <p>
+            <strong>LegalLink Pakistan</strong> is a premium, real-time mobile legal consultation platform connecting clients with verified legal practitioners in Pakistan. The application supports end-to-end appointment scheduling, automated payment routing via Stripe Connect, live video/voice consultations, and a fully functional WhatsApp-style messaging experience including audio notes, file transfers, and message deletions.
+        </p>
+
+        <h1>2. User Registration & Activation</h1>
+        <p>The system segregates access levels into three distinct roles: <strong>Client</strong>, <strong>Lawyer</strong>, and <strong>Administrator</strong>. Each path operates its own unique sequence:</p>
+
+        <div class="card">
+            <span class="badge badge-client">CLIENT</span>
+            <h3>Client Onboarding</h3>
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Form Submission</div>
+                    <div class="step-desc">Client enters general parameters: Name, Email, Phone, Province, District, Tehsil, and Password.</div>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">API Authentication</div>
+                    <div class="step-desc">Submits a JSON payload to the <code>/api/auth/register-client</code> route. The user account is saved to MongoDB.</div>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Success Redirect</div>
+                    <div class="step-desc">Direct login access. No admin approval required. Ready to browse lawyers.</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <span class="badge badge-lawyer">LAWYER</span>
+            <h3>Lawyer Onboarding & Verification</h3>
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Basic Information (Step 1/3)</div>
+                    <div class="step-desc">Lawyer supplies Name, Email, Password, Province, District, and Court Level.</div>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Professional Verification (Step 2/3)</div>
+                    <div class="step-desc">Inputs Bar Council Name, Enrollment Number, License Number, and uploads a clear picture of the License copy.</div>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Areas of Expertise & Base64 Upload (Step 3/3)</div>
+                    <div class="step-desc">Selects practice areas, writes a bio, inputs consultation fee, and uploads a profile picture. The app sends the request as a JSON payload using base64 file encodings.</div>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">4</div>
+                <div class="step-content">
+                    <div class="step-title">Admin Review Hold</div>
+                    <div class="step-desc">The lawyer record is written to MongoDB with <code>status: 'pending'</code> and <code>isApproved: false</code>. The lawyer is redirected to a static pending screen and cannot accept bookings.</div>
+                </div>
+            </div>
+        </div>
+
+        <h1>3. Admin Verification Cycle</h1>
+        <p>Pending lawyers are verified by the Admin dashboard in a secure, authenticated pathway:</p>
+        
+        <div class="card">
+            <span class="badge badge-admin">ADMINISTRATOR</span>
+            <h3>Verification Pipeline</h3>
+            <div class="flow-step">
+                <div class="step-number">1</div>
+                <div class="step-content">
+                    <div class="step-title">Pending List Load</div>
+                    <div class="step-desc">Admin loads the requests list. The app requests <code>/api/admin/pending-lawyers</code> with the stored <code>adminToken</code>.</div>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">2</div>
+                <div class="step-content">
+                    <div class="step-title">Detailed Check</div>
+                    <div class="step-desc">Admin clicks on a lawyer. The app fetches their specific profile and high-res license copy.</div>
+                </div>
+            </div>
+            <div class="flow-step">
+                <div class="step-number">3</div>
+                <div class="step-content">
+                    <div class="step-title">Approval/Rejection Update</div>
+                    <div class="step-desc">Admin clicks Approve or Reject. The app sends a POST to <code>/api/admin/update-status</code> with the lawyer ID, final status, and any optional rejection reasons.</div>
+                </div>
+            </div>
+        </div>
+
+        <h1>4. Booking & Consultation Flow</h1>
+        <p>Once a lawyer is approved, clients can initiate paid bookings:</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Step</th>
+                    <th>Action</th>
+                    <th>System Handling</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>1. Search & Select</strong></td>
+                    <td>Client selects an approved lawyer.</td>
+                    <td>App fetches approved lawyers.</td>
+                </tr>
+                <tr>
+                    <td><strong>2. Scheduling</strong></td>
+                    <td>Client picks Date and Time Slot.</td>
+                    <td>Creates a booking with status <code>'pending'</code>.</td>
+                </tr>
+                <tr>
+                    <td><strong>3. Payment Intent</strong></td>
+                    <td>Stripe card checkout form loads.</td>
+                    <td>Requests Stripe payment intent secret from backend.</td>
+                </tr>
+                <tr>
+                    <td><strong>4. Confirmation</strong></td>
+                    <td>Payment completes successfully.</td>
+                    <td>Backend updates booking status to <code>'confirmed'</code> and paymentStatus to <code>'paid'</code>. Triggers push notifications.</td>
+                </tr>
+                <tr>
+                    <td><strong>5. Direct Interaction</strong></td>
+                    <td>Consultation slot becomes active.</td>
+                    <td>Enables the real-time chat screen, voice note capabilities, and video/voice calling access.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h1>5. High-Fidelity Communication Suite</h1>
+        <p>The messaging screen replicates premium WhatsApp-style interactions:</p>
+        
+        <div class="card">
+            <h3>Communication Systems Architecture</h3>
+            <ul>
+                <li><strong>Dynamic Messaging Layout</strong>: Light blue bubbled structure (<code>#e1eafd</code> for sender) with read receipts and timestamps.</li>
+                <li><strong>Voice Note System</strong>: Records sound files natively, updates a blinking microphone layout pill with timer increments, and saves the file on the backend uploads path.</li>
+                <li><strong>Multi-Message Deletion</strong>: Long-pressing messages launches a WhatsApp-style selection bar showing the selected message count.
+                    <ul>
+                        <li>If the selected messages are all sent by the current user, they are given options: <em>"Delete for me"</em> and <em>"Delete for everyone"</em>.</li>
+                        <li>If any selected message was sent by the other party, only <em>"Delete for me"</em> is available.</li>
+                    </ul>
+                </li>
+                <li><strong>WebRTC Voice & Video Calling</strong>: Includes circular caller avatars, animated pulse waves, and structured controls (hangup, speaker, microphone mute).</li>
+            </ul>
+        </div>
+
+        <h1>6. Database Schema Summary</h1>
+        <p>The database runs on MongoDB and maps out relational endpoints using Mongoose models:</p>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Model</th>
+                    <th>Key Fields</th>
+                    <th>Relationships</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Client</strong></td>
+                    <td>name, email, phone, address, profilePicUri, password</td>
+                    <td>Has many Bookings.</td>
+                </tr>
+                <tr>
+                    <td><strong>Lawyer</strong></td>
+                    <td>name, email, phone, status, isApproved, licensePicUri, profilePicUri, areasOfPractice</td>
+                    <td>Has many Bookings, belongs to District/Province.</td>
+                </tr>
+                <tr>
+                    <td><strong>Booking</strong></td>
+                    <td>clientId, lawyerId, date, timeSlot, status, paymentStatus, review, deletedBy</td>
+                    <td>References Client and Lawyer.</td>
+                </tr>
+                <tr>
+                    <td><strong>Message</strong></td>
+                    <td>bookingId, sender, text, fileUrl, duration, type, deletedBy</td>
+                    <td>References Booking.</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+</body>
+</html>

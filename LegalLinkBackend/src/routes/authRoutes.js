@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & MULTER CONFIG
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
@@ -32,10 +35,12 @@ const uploadFields = upload.fields([
 ]);
 
 // ==========================================
-// CONTROLLER-BASED ROUTES
+// 1. AUTH & PROFILE CONTROLLER ROUTES
 // ==========================================
 router.post('/register', uploadFields, authController.registerUser);
 router.post('/login', authController.loginUser);
+router.post('/google', authController.googleLogin);
+router.post('/facebook', authController.facebookLogin);
 router.post('/verify-otp', authController.verifyAdminOTP);
 router.get('/lawyers', authController.getAllLawyers);
 router.put('/profile/update', protect, authController.updateProfile);

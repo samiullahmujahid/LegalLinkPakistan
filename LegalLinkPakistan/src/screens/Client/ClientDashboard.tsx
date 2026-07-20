@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
 import NotificationIcon from '../../components/Common/NotificationIcon';
 import Header from '../../components/Common/Header';
-import { LawyerStyles as s } from '../../theme/styles/LawyerStyles';
+import { ClientStyles as s } from '../../theme/styles/ClientStyles';
 import Card from '../../components/Common/Card/Card';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
 
@@ -18,7 +18,7 @@ const ClientDashboard: React.FC<{ navigation: any }> = ({ navigation }) => {
     { title: 'Book an Appointment', icon: 'file-document-outline', screen: 'CaseDetails' },
     { title: 'Appointment Tracking', icon: 'file-find-outline', screen: 'TrackAppointment' },
     { title: 'Find Lawyer', icon: 'text-search', screen: 'RecommendedLawyersScreen' },
-    { title: 'Tracking Complaint', icon: 'account-alert-outline', screen: 'ComplaintStatus' }, // ✅ Updated title here
+    { title: 'Tracking Complaint', icon: 'account-alert-outline', screen: 'ComplaintStatus' },
   ];
 
   const handleNavigation = (item: MenuItem) => {

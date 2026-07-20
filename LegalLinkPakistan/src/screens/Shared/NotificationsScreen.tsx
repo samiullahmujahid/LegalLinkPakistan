@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & DEPENDENCIES
+// ==========================================
 import React, { useEffect, useState } from 'react';
 import { 
   View, Text, FlatList, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert 
@@ -8,6 +11,9 @@ import Header from '../../components/Common/Header';
 import { useNotifications } from '../../components/Common/NotificationProvider';
 import { COLORS } from '../../theme/theme';
 
+// ==========================================
+// COMPONENT DECLARATION & STATE
+// ==========================================
 export const NotificationsScreen = () => {
   const { 
     notifications, 
@@ -22,6 +28,10 @@ export const NotificationsScreen = () => {
 
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // ==========================================
+  // HELPER & UTILITY FUNCTIONS
+  // ==========================================
 
   useEffect(() => {
     fetchNotifications();
@@ -446,4 +456,7 @@ const styles = StyleSheet.create({
   }
 });
 
+// ==========================================
+// EXPORTS
+// ==========================================
 export default NotificationsScreen;

@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// LAWYER SCHEMA DEFINITION
+// ==========================================
 const lawyerSchema = new mongoose.Schema({
     // --- Personal Information ---
     name: { type: String, required: true },
@@ -55,5 +61,8 @@ const lawyerSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 }, { collection: 'lawyers' }); 
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 const Lawyer = mongoose.model('Lawyer', lawyerSchema);
 module.exports = Lawyer;

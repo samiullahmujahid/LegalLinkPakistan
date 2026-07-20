@@ -10,7 +10,8 @@ import {
   ActivityIndicator,
   Platform,
   PermissionsAndroid,
-  Permission
+  Permission,
+  KeyboardAvoidingView
 } from 'react-native';
 import { Dropdown } from 'react-native-element-dropdown';
 import { launchImageLibrary, ImageLibraryOptions } from 'react-native-image-picker';
@@ -297,8 +298,11 @@ const LawyerSignup = ({ navigation }: any) => {
         showBackButton={true} 
         onBackPress={handleBack} 
       />
-
-      <ScrollView contentContainerStyle={ls.scrollContent} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={ls.scrollContent} showsVerticalScrollIndicator={false}>
         <View style={[ls.headerSection, { marginTop: 15 }]}>
           <Image source={require('../../../assets/images/logo.png')} style={[ls.logo, { width: 80, height: 80 }]} />
           <Text style={[ls.brandName, { fontSize: 20, marginTop: 5 }]}>Legal Link Pakistan</Text>
@@ -337,7 +341,7 @@ const LawyerSignup = ({ navigation }: any) => {
               onChangeText={(val) => setBasicInfo({ ...basicInfo, phone: val })}
             />
 
-            <Text style={ls.fieldLabel}>Practice Location:</Text>
+            <Text style={ls.fieldLabel}>Address:</Text>
             <LocationSelector
               province={basicInfo.province}
               district={basicInfo.district}
@@ -364,6 +368,7 @@ const LawyerSignup = ({ navigation }: any) => {
 
 
 
+            <Text style={ls.fieldLabel}>Password:</Text>
             <MyInput
               placeholder="Password"
               isPassword={true}
@@ -543,6 +548,7 @@ const LawyerSignup = ({ navigation }: any) => {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

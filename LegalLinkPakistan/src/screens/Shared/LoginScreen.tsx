@@ -1,13 +1,25 @@
+// ==========================================
+// IMPORTS & DEPENDENCIES
+// ==========================================
 import React, { useState } from 'react';
 import {
-  View, Text, TouchableOpacity, Image, SafeAreaView, Alert
+  View, Text, TouchableOpacity, Image, SafeAreaView, Alert, KeyboardAvoidingView, ScrollView, Platform
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MyInput } from '../../components/Common/MyInput';
 import { MyButton } from '../../components/Common/MyButton';
 import { globalStyles } from '../../theme/globalStyles';
+import {
+  getGoogleIdToken,
+  getFacebookAccessToken,
+  loginWithGoogleBackend,
+  loginWithFacebookBackend
+} from '../../utils/authService';
 
+// ==========================================
+// COMPONENT DECLARATION & STATE
+// ==========================================
 const LoginScreen = ({ navigation, route }: any) => {
   // Get role from navigation params, default to Client
   const { role } = route.params || { role: 'Client' }; 
@@ -18,6 +30,9 @@ const LoginScreen = ({ navigation, route }: any) => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({ email: '', password: '', adminKey: '' });
 
+  // ==========================================
+  // HANDLERS (LOGIN & OAUTH)
+  // ==========================================
   const handleLogin = async () => {
     let emailError = '';
     let passwordError = '';
@@ -110,9 +125,83 @@ const LoginScreen = ({ navigation, route }: any) => {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const idToken = await getGoogleIdToken();
+      const response = await loginWithGoogleBackend(idToken, role);
+      await handleOAuthSuccess(response);
+    } catch (error: any) {
+      if (error?.message && !error.message.includes('developer error') && !error.message.includes('SIGN_IN_CANCELLED')) {
+        Alert.alert("Google Login Failed", error.message || "Failed to authenticate with Google");
+      } else {
+        console.log("Google Login Cancelled or Developer Error.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFacebookLogin = async () => {
+    setLoading(true);
+    try {
+      const accessToken = await getFacebookAccessToken();
+      const response = await loginWithFacebookBackend(accessToken, role);
+      await handleOAuthSuccess(response);
+    } catch (error: any) {
+      if (error?.message && !error.message.includes('cancelled')) {
+        Alert.alert("Facebook Login Failed", error.message || "Failed to authenticate with Facebook");
+      } else {
+        console.log("Facebook Login Cancelled.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOAuthSuccess = async (response: any) => {
+    if (response.success) {
+      const userData = response.user;
+      const sessionToken = response.token;
+
+      await AsyncStorage.setItem('user', JSON.stringify(userData));
+
+      if (sessionToken) {
+        await AsyncStorage.setItem('userToken', sessionToken);
+        await AsyncStorage.setItem('token', sessionToken);
+      }
+
+      if (role === 'Lawyer') {
+        if (userData.status === 'approved') {
+          navigation.replace('LawyerDashboard');
+        } else if (userData.status === 'pending') {
+          Alert.alert(
+            "Verification Pending",
+            "Your account is currently under review by the Admin. Please wait for approval."
+          );
+        } else if (userData.status === 'rejected') {
+          Alert.alert(
+            "Account Rejected",
+            `Your registration was rejected. Reason: ${userData.rejectionReason || "Documents not valid."}`
+          );
+        }
+      } else {
+        navigation.replace('ClientDashboard');
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={globalStyles.container}>
-      <View style={globalStyles.inner}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center' }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={globalStyles.inner}>
         <View style={globalStyles.logoContainer}>
           <Image source={require('../../assets/images/logo.png')} style={globalStyles.logo} />
           <Text style={globalStyles.brandName}>Legal Link Pakistan</Text>
@@ -166,6 +255,50 @@ const LoginScreen = ({ navigation, route }: any) => {
           />
 
           {role !== 'Admin' && (
+            <View style={{ marginTop: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 15 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: '#E0E0E0' }} />
+                <Text style={{ marginHorizontal: 10, color: '#888', fontSize: 13 }}>OR</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: '#E0E0E0' }} />
+              </View>
+              
+              <TouchableOpacity
+                onPress={handleGoogleLogin}
+                disabled={loading}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#FFFFFF',
+                  borderWidth: 1,
+                  borderColor: '#CCCCCC',
+                  paddingVertical: 12,
+                  borderRadius: 30,
+                  marginBottom: 12
+                }}
+              >
+                <Text style={{ color: '#333333', fontWeight: 'bold', fontSize: 15 }}>Sign in with Google</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={handleFacebookLogin}
+                disabled={loading}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  backgroundColor: '#1877F2',
+                  paddingVertical: 12,
+                  borderRadius: 30,
+                  marginBottom: 15
+                }}
+              >
+                <Text style={{ color: '#FFFFFF', fontWeight: 'bold', fontSize: 15 }}>Sign in with Facebook</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {role !== 'Admin' && (
             <View style={globalStyles.footer}>
               <Text style={globalStyles.footerText}>Don't have an account? </Text>
               <TouchableOpacity onPress={() => role === 'Lawyer' ? navigation.navigate('LawyerSignup') : navigation.navigate('ClientSignup')}>
@@ -174,9 +307,14 @@ const LoginScreen = ({ navigation, route }: any) => {
             </View>
           )}
         </View>
-      </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
 
+// ==========================================
+// EXPORTS
+// ==========================================
 export default LoginScreen;

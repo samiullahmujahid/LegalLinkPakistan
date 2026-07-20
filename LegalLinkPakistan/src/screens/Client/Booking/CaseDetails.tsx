@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, TextInput, TouchableOpacity, FlatList, Alert, Platform, StatusBar 
+  View, Text, TextInput, TouchableOpacity, FlatList, Alert, Platform, StatusBar, KeyboardAvoidingView 
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -8,7 +8,7 @@ import Header from '../../../components/Common/Header';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LawyerStyles as styles } from '../../../theme/styles/LawyerStyles';
+import { ClientStyles as styles } from '../../../theme/styles/ClientStyles';
 import ProfileCard from '../../../components/Common/ProfileCard/ProfileCard';
 import { MyButton } from '../../../components/Common/MyButton';
 
@@ -24,8 +24,10 @@ const caseTypes = [
   { label: 'Family Dispute', value: 'Family Dispute' },
 ];
 
-const CaseDetails = ({ navigation }: any) => {
+const CaseDetails = ({ route, navigation }: any) => {
   const insets = useSafeAreaInsets();
+  const { lawyerId, preselectedLawyerId } = route.params || {};
+  const targetedLawyerId = lawyerId || preselectedLawyerId;
   const [courtLevel, setCourtLevel] = useState('');
   const [caseType, setCaseType] = useState('');
   const [subject, setSubject] = useState('');
@@ -57,6 +59,10 @@ const CaseDetails = ({ navigation }: any) => {
         const data = res?.data?.lawyers || res?.data?.data || res?.data || [];
         setLawyers(data);
         setFilteredLawyers(data);
+        if (targetedLawyerId) {
+          const match = data.find((l: any) => l._id === targetedLawyerId);
+          if (match) setSelectedLawyer(match);
+        }
       } catch {
         loadMocks();
       }
@@ -69,6 +75,10 @@ const CaseDetails = ({ navigation }: any) => {
       ];
       setLawyers(mocks);
       setFilteredLawyers(mocks);
+      if (targetedLawyerId) {
+        const match = mocks.find((l: any) => l._id === targetedLawyerId);
+        if (match) setSelectedLawyer(match);
+      }
     };
 
     fetchLawyers();
@@ -77,34 +87,50 @@ const CaseDetails = ({ navigation }: any) => {
   useEffect(() => {
     let filtered = lawyers;
 
-    if (courtLevel) {
-      filtered = filtered.filter(l => {
-        const lCourt = l.courtLevel ? l.courtLevel.toLowerCase() : "";
-        const selectedCourt = courtLevel.toLowerCase();
-        return lCourt.includes(selectedCourt) || selectedCourt.includes(lCourt);
-      });
-    }
+    if (targetedLawyerId) {
+      filtered = filtered.filter(l => l._id === targetedLawyerId);
+    } else {
+      if (courtLevel) {
+        filtered = filtered.filter(l => {
+          const lCourt = l.courtLevel ? l.courtLevel.toLowerCase() : "";
+          const selectedCourt = courtLevel.toLowerCase();
+          return lCourt.includes(selectedCourt) || selectedCourt.includes(lCourt);
+        });
+      }
 
-    if (caseType) {
-      filtered = filtered.filter(l => {
-        const matchesSpecialization = l.specialization && l.specialization.toLowerCase().includes(caseType.toLowerCase().split(' ')[0]);
-        const matchesPractice = l.areasOfPractice && l.areasOfPractice.some((area: string) => 
-          area.toLowerCase().includes(caseType.toLowerCase().split(' ')[0])
+      if (caseType) {
+        filtered = filtered.filter(l => {
+          const matchesSpecialization = l.specialization && l.specialization.toLowerCase().includes(caseType.toLowerCase().split(' ')[0]);
+          const matchesPractice = l.areasOfPractice && l.areasOfPractice.some((area: string) => 
+            area.toLowerCase().includes(caseType.toLowerCase().split(' ')[0])
+          );
+          return matchesSpecialization || matchesPractice;
+        });
+      }
+
+      if (searchQuery.trim()) {
+        const lowerQuery = searchQuery.toLowerCase();
+        filtered = filtered.filter(l => 
+          l.name.toLowerCase().includes(lowerQuery) || 
+          (l.city && l.city.toLowerCase().includes(lowerQuery))
         );
-        return matchesSpecialization || matchesPractice;
-      });
+      }
     }
 
-    if (searchQuery.trim()) {
-      const lowerQuery = searchQuery.toLowerCase();
-      filtered = filtered.filter(l => 
-        l.name.toLowerCase().includes(lowerQuery) || 
-        (l.city && l.city.toLowerCase().includes(lowerQuery))
-      );
-    }
+    // Rank lawyers by rating dynamically
+    filtered = [...filtered].sort((a, b) => {
+      const ratingA = Number(a.averageRating || a.rating || 0);
+      const ratingB = Number(b.averageRating || b.rating || 0);
+      if (ratingB !== ratingA) {
+        return ratingB - ratingA;
+      }
+      const reviewsA = Number(a.totalReviews || 0);
+      const reviewsB = Number(b.totalReviews || 0);
+      return reviewsB - reviewsA;
+    });
 
     setFilteredLawyers(filtered);
-  }, [courtLevel, caseType, searchQuery, lawyers]);
+  }, [courtLevel, caseType, searchQuery, lawyers, targetedLawyerId]);
 
   const handleNext = () => {
     if (!courtLevel || !caseType || !subject || !description || !selectedLawyer) {
@@ -122,101 +148,112 @@ const CaseDetails = ({ navigation }: any) => {
     <View style={styles.container}>
       <Header title="Appointment Booking" />
 
-      <FlatList
-        data={filteredLawyers}
-        keyExtractor={(item) => item._id}
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        ListHeaderComponent={
-          <View style={{ marginTop: 15 }}>
-            <Text style={styles.mainHeading}>Fill Case Details</Text>
-            
-            <View style={styles.inputGroup}>
-              <Dropdown
-                style={styles.dropdown}
-                placeholderStyle={styles.placeholderStyle}
-                selectedTextStyle={styles.selectedTextStyle}
-                data={courtLevels}
-                labelField="label"
-                valueField="value"
-                placeholder="Select court level..."
-                value={courtLevel}
-                onChange={item => setCourtLevel(item.value)}
-              />
-            </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <FlatList
+          data={filteredLawyers}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
+          ListHeaderComponent={
+            <View style={{ marginTop: 15 }}>
+              <Text style={styles.mainHeading}>Fill Case Details</Text>
+              
+              <View style={styles.inputGroup}>
+                <Dropdown
+                  style={styles.dropdown}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  data={courtLevels}
+                  labelField="label"
+                  valueField="value"
+                  placeholder="Select court level..."
+                  value={courtLevel}
+                  onChange={item => setCourtLevel(item.value)}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <Dropdown
-                style={styles.dropdown}
-                placeholderStyle={styles.placeholderStyle}
-                selectedTextStyle={styles.selectedTextStyle}
-                data={caseTypes}
-                labelField="label"
-                valueField="value"
-                placeholder="Select Case Type..."
-                value={caseType}
-                onChange={item => setCaseType(item.value)}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <Dropdown
+                  style={styles.dropdown}
+                  placeholderStyle={styles.placeholderStyle}
+                  selectedTextStyle={styles.selectedTextStyle}
+                  data={caseTypes}
+                  labelField="label"
+                  valueField="value"
+                  placeholder="Select Case Type..."
+                  value={caseType}
+                  onChange={item => setCaseType(item.value)}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <TextInput 
-                style={styles.input}
-                placeholder="Case Subject"
-                placeholderTextColor="#777"
-                value={subject}
-                onChangeText={setSubject}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <TextInput 
+                  style={styles.input}
+                  placeholder="Case Subject"
+                  placeholderTextColor="#777"
+                  value={subject}
+                  onChangeText={setSubject}
+                />
+              </View>
 
-            <View style={styles.inputGroup}>
-              <TextInput 
-                style={[styles.textAreaInput, { height: 120 }]}
-                placeholder="Describe case shortly..."
-                placeholderTextColor="#777"
-                multiline
-                numberOfLines={4}
-                value={description}
-                onChangeText={setDescription}
-              />
-            </View>
+              <View style={styles.inputGroup}>
+                <TextInput 
+                  style={[styles.textAreaInput, { height: 120 }]}
+                  placeholder="Describe case shortly..."
+                  placeholderTextColor="#777"
+                  multiline
+                  numberOfLines={4}
+                  value={description}
+                  onChangeText={setDescription}
+                />
+              </View>
 
-            <Text style={[styles.sectionHeading, { marginTop: 10, marginBottom: 5 }]}>Appoint a Lawyer</Text>
-            
-            <View style={[styles.input, { flexDirection: 'row', alignItems: 'center', marginBottom: 15, paddingHorizontal: 10 }]}>
-              <TextInput 
-                style={{ flex: 1, color: '#000', padding: 0 }}
-                placeholder="Search a specific Lawyer"
-                placeholderTextColor="#777"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              <Icon name="magnify" size={22} color="#001a4d" />
+              {!targetedLawyerId ? (
+                <>
+                  <Text style={[styles.sectionHeading, { marginTop: 10, marginBottom: 5 }]}>Appoint a Lawyer</Text>
+                  
+                  <View style={[styles.input, { flexDirection: 'row', alignItems: 'center', marginBottom: 15, paddingHorizontal: 10 }]}>
+                    <TextInput 
+                      style={{ flex: 1, color: '#000', padding: 0 }}
+                      placeholder="Search a specific Lawyer"
+                      placeholderTextColor="#777"
+                      value={searchQuery}
+                      onChangeText={setSearchQuery}
+                    />
+                    <Icon name="magnify" size={22} color="#001a4d" />
+                  </View>
+                </>
+              ) : (
+                <Text style={[styles.sectionHeading, { marginTop: 10, marginBottom: 5 }]}>Selected Lawyer</Text>
+              )}
             </View>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <ProfileCard 
-            userData={{
-              ...item, 
-              role: 'Lawyer'
-            }}
-            isSelected={selectedLawyer?._id === item._id}
-            onSelectPress={() => setSelectedLawyer(item)}
-            onCheckPress={() => navigation.navigate('LawyerProfile', { lawyerId: item._id, viewOnly: true })}
-          />
-        )}
-        ListEmptyComponent={
-          <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>No lawyers found.</Text>
-        }
-      />
-
-      <View style={[styles.footerContainer, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#fff', paddingBottom: Math.max(insets.bottom, 15) }]}>
-        <MyButton 
-          title="Next"
-          onPress={handleNext}
-          style={styles.nextActionButton}
+          }
+          renderItem={({ item }) => (
+            <ProfileCard 
+              userData={{
+                ...item, 
+                role: 'Lawyer'
+              }}
+              isSelected={selectedLawyer?._id === item._id}
+              onSelectPress={() => setSelectedLawyer(item)}
+              onCheckPress={() => navigation.navigate('LawyerProfile', { lawyerId: item._id, viewOnly: true })}
+            />
+          )}
+          ListEmptyComponent={
+            <Text style={{ textAlign: 'center', color: '#888', marginTop: 20 }}>No lawyers found.</Text>
+          }
         />
-      </View>
+
+        <View style={[styles.footerContainer, { position: 'absolute', bottom: 0, width: '100%', backgroundColor: '#fff', paddingBottom: Math.max(insets.bottom, 15) }]}>
+          <MyButton 
+            title="Next"
+            onPress={handleNext}
+            style={styles.nextActionButton}
+          />
+        </View>
+      </KeyboardAvoidingView>
     </View>
   );
 };

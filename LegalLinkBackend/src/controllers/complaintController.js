@@ -1,10 +1,15 @@
+// ==========================================
+// IMPORTS & HELPERS
+// ==========================================
 const Complaint = require('../models/Complaint');
 const Client = require('../models/Client');
 const Lawyer = require('../models/Lawyer');
 const User = require('../models/User');
 const { createAndSendNotification } = require('../services/notificationService');
 
-
+// ==========================================
+// 1. SUBMIT COMPLAINT
+// ==========================================
 // 1. Submit a new complaint
 exports.submitComplaint = async (req, res) => {
     try {
@@ -77,6 +82,9 @@ const populateComplaintData = async (complaints) => {
     }));
 };
 
+// ==========================================
+// 2. FETCH COMPLAINTS (ADMIN & USER)
+// ==========================================
 // 2. Get all complaints for admin (Active pending/in-progress only)
 exports.getAllComplaints = async (req, res) => {
     try {
@@ -137,6 +145,9 @@ exports.getMyComplaints = async (req, res) => {
     }
 };
 
+// ==========================================
+// 3. UPDATE COMPLAINT STATUS & SUSPENSION
+// ==========================================
 // 4. Admin update complaint status (with support for suspension days)
 exports.updateComplaintStatus = async (req, res) => {
     try {
@@ -210,6 +221,9 @@ exports.updateComplaintStatus = async (req, res) => {
     }
 };
 
+// ==========================================
+// 4. ACKNOWLEDGE & DELETE COMPLAINT
+// ==========================================
 // 5. Get single complaint details by ID
 exports.getComplaintById = async (req, res) => {
     try {

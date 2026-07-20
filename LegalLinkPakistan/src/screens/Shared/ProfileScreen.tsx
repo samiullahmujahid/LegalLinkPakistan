@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & DEPENDENCIES
+// ==========================================
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, TextInput, StyleSheet, ScrollView, TouchableOpacity, 
@@ -11,9 +14,13 @@ import Header from '../../components/Common/Header';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
 import { LocationSelector } from '../../components/Common/LocationSelector';
 import { COLORS } from '../../theme/theme';
+import { MyButton } from '../../components/Common/MyButton';
 
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
 
+// ==========================================
+// COMPONENT DECLARATION & STATE MANAGEMENT
+// ==========================================
 export const ProfileScreen = ({ navigation }: any) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -661,20 +668,19 @@ export const ProfileScreen = ({ navigation }: any) => {
             </ScrollView>
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnCancel]} onPress={() => setEditModalVisible(false)}>
-                <Text style={styles.modalBtnCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalBtn, styles.modalBtnSave, saving && { opacity: 0.6 }]} 
+              <MyButton 
+                title="Cancel"
+                onPress={() => setEditModalVisible(false)}
+                style={[styles.modalBtn, styles.modalBtnCancel, { height: undefined, marginTop: 0 }]}
+                textStyle={styles.modalBtnCancelText}
+              />
+              <MyButton 
+                title={saving ? "Saving..." : "Save Changes"}
                 onPress={handleSaveChanges}
                 disabled={saving}
-              >
-                {saving ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.modalBtnSaveText}>Save Changes</Text>
-                )}
-              </TouchableOpacity>
+                style={[styles.modalBtn, styles.modalBtnSave, saving && { opacity: 0.6 }, { height: undefined, marginTop: 0 }]}
+                textStyle={styles.modalBtnSaveText}
+              />
             </View>
           </View>
         </SafeAreaView>
@@ -733,20 +739,20 @@ export const ProfileScreen = ({ navigation }: any) => {
             </View>
 
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={[styles.modalBtn, styles.modalBtnCancel]} onPress={() => setPasswordModalVisible(false)} disabled={passUpdating}>
-                <Text style={styles.modalBtnCancelText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalBtn, styles.modalBtnSave, passUpdating && { opacity: 0.6 }]} 
+              <MyButton 
+                title="Cancel"
+                onPress={() => setPasswordModalVisible(false)}
+                disabled={passUpdating}
+                style={[styles.modalBtn, styles.modalBtnCancel, { height: undefined, marginTop: 0 }]}
+                textStyle={styles.modalBtnCancelText}
+              />
+              <MyButton 
+                title={passUpdating ? "Updating..." : "Save Password"}
                 onPress={handleUpdatePassword}
                 disabled={passUpdating}
-              >
-                {passUpdating ? (
-                  <ActivityIndicator color="#fff" size="small" />
-                ) : (
-                  <Text style={styles.modalBtnSaveText}>Save Password</Text>
-                )}
-              </TouchableOpacity>
+                style={[styles.modalBtn, styles.modalBtnSave, passUpdating && { opacity: 0.6 }, { height: undefined, marginTop: 0 }]}
+                textStyle={styles.modalBtnSaveText}
+              />
             </View>
           </View>
         </SafeAreaView>
@@ -1061,4 +1067,7 @@ const styles = StyleSheet.create({
   },
 });
 
+// ==========================================
+// EXPORTS
+// ==========================================
 export default ProfileScreen;

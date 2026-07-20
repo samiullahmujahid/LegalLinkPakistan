@@ -1,10 +1,15 @@
+// ==========================================
+// IMPORTS & DEPENDENCIES
+// ==========================================
 const Booking = require('../models/Booking');
 const PaymentHistory = require('../models/PaymentHistory');
 const Lawyer = require('../models/Lawyer');
 const User = require('../models/User');
 const { createAndSendNotification } = require('../services/notificationService');
 
-
+// ==========================================
+// 1. APPOINTMENT CREATION & COUNTERS
+// ==========================================
 // 1. Submit a new booking request from client side
 const createBooking = async (req, res) => {
     try {
@@ -294,6 +299,9 @@ const getBookingStatus = async (req, res) => {
     }
 };
 
+// ==========================================
+// 2. CLIENT & LAWYER BOOKINGS STATUS
+// ==========================================
 // 7. Get ALL bookings for a SPECIFIC CLIENT
 const getClientBookings = async (req, res) => {
     try {
@@ -321,6 +329,9 @@ const getClientBookings = async (req, res) => {
     }
 };
 
+// ==========================================
+// 3. WALLET, PAYMENTS & APPOINTMENT COMPLETION
+// ==========================================
 // 8. Get Lawyer Wallet Data
 const getLawyerWallet = async (req, res) => {
     try {
@@ -559,6 +570,47 @@ const createInstantChatBooking = async (req, res) => {
     }
 };
 
+// 15. Fetch all reviews for a given lawyer
+const getLawyerReviews = async (req, res) => {
+    try {
+        const { lawyerId } = req.params;
+        const bookings = await Booking.find({ 
+            lawyerId: lawyerId, 
+            "review.rating": { $exists: true, $ne: null } 
+        })
+        .populate('clientId', 'name profilePicUri')
+        .sort({ "review.createdAt": -1 });
+
+        const reviews = await Promise.all(bookings.map(async (b) => {
+            let clientData = b.clientId;
+            if (!clientData || !clientData.name) {
+                const ClientModel = require('../models/Client');
+                const clientDoc = await ClientModel.findById(b.clientId).select('name profilePicUri');
+                if (clientDoc) {
+                    clientData = clientDoc;
+                }
+            }
+            
+            return {
+                bookingId: b._id,
+                rating: b.review.rating,
+                comment: b.review.comment,
+                createdAt: b.review.createdAt || b.updatedAt || new Date(),
+                clientName: clientData?.name || "M. Ali",
+                clientPic: clientData?.profilePicUri || ""
+            };
+        }));
+
+        return res.status(200).json({ success: true, reviews });
+    } catch (error) {
+        console.error("Get Lawyer Reviews Error:", error.message);
+        return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// ==========================================
+// MODULE EXPORTS
+// ==========================================
 module.exports = {
     createBooking,
     getLawyerActiveCount,
@@ -573,5 +625,6 @@ module.exports = {
     submitComplaint,
     completeAppointment,
     deleteBooking,
-    createInstantChatBooking
+    createInstantChatBooking,
+    getLawyerReviews
 };

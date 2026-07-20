@@ -5,6 +5,10 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken'); 
 const nodemailer = require('nodemailer');
 const mongoose = require('mongoose'); // Added for ID validation
+const { OAuth2Client } = require('google-auth-library');
+const axios = require('axios');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const FIXED_ADMIN_EMAIL = "samiullahmujahid.pk@gmail.com";
 const FIXED_ADMIN_KEY = "LLP123"; 
@@ -599,5 +603,260 @@ exports.updatePassword = async (req, res) => {
     } catch (error) {
         console.error("Update Password Error:", error);
         return res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+// ==========================================
+// 9. GOOGLE LOGIN SYSTEM
+// ==========================================
+exports.googleLogin = async (req, res) => {
+    try {
+        const { idToken, role } = req.body;
+        if (!idToken) {
+            return res.status(400).json({ success: false, message: "ID Token is required" });
+        }
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const payload = ticket.getPayload();
+        const { email, name, picture } = payload;
+
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Email not provided by Google" });
+        }
+
+        const searchEmail = email.toLowerCase().trim();
+
+        // 1. Check if user exists in either collection
+        let user = await Client.findOne({ email: searchEmail });
+        let userRole = 'Client';
+
+        if (!user) {
+            user = await Lawyer.findOne({ email: searchEmail });
+            if (user) userRole = 'Lawyer';
+        }
+
+        // 2. If user exists, log them in
+        if (user) {
+            // Check suspension
+            if (user.isSuspended) {
+                if (user.suspendedUntil && new Date(user.suspendedUntil) < new Date()) {
+                    // Auto lift
+                    user.isSuspended = false;
+                    user.suspendedUntil = null;
+                    user.suspensionReason = "";
+                    await user.save();
+                } else {
+                    const expiryMsg = user.suspendedUntil 
+                        ? `until ${new Date(user.suspendedUntil).toLocaleDateString()}` 
+                        : "permanently";
+                    return res.status(403).json({ 
+                        success: false, 
+                        isSuspended: true, 
+                        message: `Your account has been suspended ${expiryMsg}. Reason: ${user.suspensionReason || "Admin decision"}` 
+                    });
+                }
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Login Successful",
+                token: generateToken(user._id, userRole),
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: userRole,
+                    profilePicUri: user.profilePicUri || user.profilePic || ""
+                }
+            });
+        }
+
+        // 3. If user doesn't exist, register them
+        const defaultRole = role || 'Client';
+        const salt = await bcrypt.genSalt(10);
+        const randomPassword = Math.random().toString(36).slice(-10);
+        const hashedPassword = await bcrypt.hash(randomPassword, salt);
+
+        if (defaultRole === 'Lawyer') {
+            const newLawyer = new Lawyer({
+                name: name || "Google Lawyer",
+                email: searchEmail,
+                password: hashedPassword,
+                phone: "N/A",
+                profilePicUri: picture || "",
+                profilePic: picture || "",
+                role: 'Lawyer',
+                status: 'pending',
+                isApproved: false
+            });
+            await newLawyer.save();
+            return res.status(201).json({
+                success: true,
+                message: "Registration Successful",
+                token: generateToken(newLawyer._id, 'Lawyer'),
+                user: {
+                    id: newLawyer._id,
+                    name: newLawyer.name,
+                    email: newLawyer.email,
+                    role: 'Lawyer',
+                    profilePicUri: newLawyer.profilePicUri
+                }
+            });
+        } else {
+            const newClient = new Client({
+                name: name || "Google Client",
+                email: searchEmail,
+                password: hashedPassword,
+                phone: "N/A",
+                profilePicUri: picture || "",
+                profilePic: picture || "",
+                role: 'Client'
+            });
+            await newClient.save();
+            return res.status(201).json({
+                success: true,
+                message: "Registration Successful",
+                token: generateToken(newClient._id, 'Client'),
+                user: {
+                    id: newClient._id,
+                    name: newClient.name,
+                    email: newClient.email,
+                    role: 'Client',
+                    profilePicUri: newClient.profilePicUri
+                }
+            });
+        }
+
+    } catch (err) {
+        console.error("Google Auth Error:", err);
+        return res.status(500).json({ success: false, message: "Google Authentication failed", error: err.message });
+    }
+};
+
+// ==========================================
+// 10. FACEBOOK LOGIN SYSTEM
+// ==========================================
+exports.facebookLogin = async (req, res) => {
+    try {
+        const { accessToken, role } = req.body;
+        if (!accessToken) {
+            return res.status(400).json({ success: false, message: "Access Token is required" });
+        }
+
+        // Verify token with Facebook Graph API
+        const fbUrl = `https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${accessToken}`;
+        const fbResponse = await axios.get(fbUrl);
+        const { email, name, picture } = fbResponse.data;
+
+        const searchEmail = email ? email.toLowerCase().trim() : `${fbResponse.data.id}@facebook.com`;
+
+        // 1. Check if user exists in either collection
+        let user = await Client.findOne({ email: searchEmail });
+        let userRole = 'Client';
+
+        if (!user) {
+            user = await Lawyer.findOne({ email: searchEmail });
+            if (user) userRole = 'Lawyer';
+        }
+
+        // 2. If user exists, log them in
+        if (user) {
+            // Check suspension
+            if (user.isSuspended) {
+                if (user.suspendedUntil && new Date(user.suspendedUntil) < new Date()) {
+                    // Auto lift
+                    user.isSuspended = false;
+                    user.suspendedUntil = null;
+                    user.suspensionReason = "";
+                    await user.save();
+                } else {
+                    const expiryMsg = user.suspendedUntil 
+                        ? `until ${new Date(user.suspendedUntil).toLocaleDateString()}` 
+                        : "permanently";
+                    return res.status(403).json({ 
+                        success: false, 
+                        isSuspended: true, 
+                        message: `Your account has been suspended ${expiryMsg}. Reason: ${user.suspensionReason || "Admin decision"}` 
+                    });
+                }
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: "Login Successful",
+                token: generateToken(user._id, userRole),
+                user: {
+                    id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    role: userRole,
+                    profilePicUri: user.profilePicUri || user.profilePic || ""
+                }
+            });
+        }
+
+        // 3. If user doesn't exist, register them
+        const defaultRole = role || 'Client';
+        const salt = await bcrypt.genSalt(10);
+        const randomPassword = Math.random().toString(36).slice(-10);
+        const hashedPassword = await bcrypt.hash(randomPassword, salt);
+        const pictureUrl = picture && picture.data ? picture.data.url : "";
+
+        if (defaultRole === 'Lawyer') {
+            const newLawyer = new Lawyer({
+                name: name || "Facebook Lawyer",
+                email: searchEmail,
+                password: hashedPassword,
+                phone: "N/A",
+                profilePicUri: pictureUrl,
+                profilePic: pictureUrl,
+                role: 'Lawyer',
+                status: 'pending',
+                isApproved: false
+            });
+            await newLawyer.save();
+            return res.status(201).json({
+                success: true,
+                message: "Registration Successful",
+                token: generateToken(newLawyer._id, 'Lawyer'),
+                user: {
+                    id: newLawyer._id,
+                    name: newLawyer.name,
+                    email: newLawyer.email,
+                    role: 'Lawyer',
+                    profilePicUri: newLawyer.profilePicUri
+                }
+            });
+        } else {
+            const newClient = new Client({
+                name: name || "Facebook Client",
+                email: searchEmail,
+                password: hashedPassword,
+                phone: "N/A",
+                profilePicUri: pictureUrl,
+                profilePic: pictureUrl,
+                role: 'Client'
+            });
+            await newClient.save();
+            return res.status(201).json({
+                success: true,
+                message: "Registration Successful",
+                token: generateToken(newClient._id, 'Client'),
+                user: {
+                    id: newClient._id,
+                    name: newClient.name,
+                    email: newClient.email,
+                    role: 'Client',
+                    profilePicUri: newClient.profilePicUri
+                }
+            });
+        }
+
+    } catch (err) {
+        console.error("Facebook Auth Error:", err);
+        return res.status(500).json({ success: false, message: "Facebook Authentication failed", error: err.message });
     }
 };

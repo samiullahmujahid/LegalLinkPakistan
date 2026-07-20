@@ -1,6 +1,12 @@
+// ==========================================
+// IMPORTS & DEPENDENCIES
+// ==========================================
 const Notification = require('../models/Notification');
 const socketService = require('./socketService');
 
+// ==========================================
+// 1. NOTIFICATION PUSH & CREATION LOGIC
+// ==========================================
 /**
  * Create a notification in the database and push it in real-time if the user is online.
  * @param {string} recipientId - The Mongoose ID of the user receiving the notification
@@ -41,6 +47,9 @@ const createAndSendNotification = async (recipientId, title, body, type, data = 
   }
 };
 
+// ==========================================
+// EXPORTS
+// ==========================================
 module.exports = {
   createAndSendNotification
 };

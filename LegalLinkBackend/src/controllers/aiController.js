@@ -1,10 +1,17 @@
+// ==========================================
+// IMPORTS & DEPENDENCIES
+// ==========================================
 const { 
   generateOpenAIResponse,
   generateOpenAIVisionResponse,
   generateOpenAIImage
 } = require('../services/openaiService'); 
 const AiChat = require('../models/AiChat');
+const Lawyer = require('../models/Lawyer');
 
+// ==========================================
+// 1. LEGAL AI CONSULTANT (TEXT & VISION)
+// ==========================================
 exports.askLegalAI = async (req, res) => {
   try {
     const { message, image } = req.body; // 'image' should contain base64 string
@@ -23,6 +30,46 @@ exports.askLegalAI = async (req, res) => {
       aiReply = await generateOpenAIResponse(message);
     }
 
+    // Process Lawyer Recommendations dynamically
+    let recommendedLawyers = [];
+    if (message && !image) {
+      const cleanMsg = message.toLowerCase();
+      const queryKeywords = ["lawyer", "lawyers", "advocate", "recommend", "best", "top", "gavel", "attorney", "specialist"];
+      const isSearchingLawyers = queryKeywords.some(kw => cleanMsg.includes(kw));
+
+      if (isSearchingLawyers) {
+        let matchQuery = {};
+        const specializations = [
+          { key: "criminal", term: "Criminal" },
+          { key: "civil", term: "Civil" },
+          { key: "family", term: "Family" },
+          { key: "corporate", term: "Corporate" },
+          { key: "intellectual", term: "Intellectual" },
+          { key: "property", term: "Property" }
+        ];
+        
+        const matchedTerms = specializations.filter(sp => cleanMsg.includes(sp.key)).map(sp => sp.term);
+        
+        if (matchedTerms.length > 0) {
+          matchQuery.areasOfPractice = { $in: matchedTerms.map(term => new RegExp(term, 'i')) };
+        }
+        
+        const rawLawyers = await Lawyer.find(matchQuery)
+          .sort({ averageRating: -1, totalReviews: -1 })
+          .limit(3);
+
+        recommendedLawyers = rawLawyers.map(l => ({
+          _id: l._id,
+          name: l.name,
+          averageRating: l.averageRating || 5.0,
+          totalReviews: l.totalReviews || 0,
+          expertise: l.areasOfPractice ? (Array.isArray(l.areasOfPractice) ? l.areasOfPractice.join(', ') : l.areasOfPractice) : "Legal Consultant",
+          city: l.address?.city || l.city || "Pakistan",
+          profilePicUri: l.profilePicUri || ""
+        }));
+      }
+    }
+
     // Save history logs
     if (userId) {
       await AiChat.create({ 
@@ -35,7 +82,8 @@ exports.askLegalAI = async (req, res) => {
 
     return res.status(200).json({ 
       success: true, 
-      reply: aiReply 
+      reply: aiReply,
+      recommendedLawyers
     });
 
   } catch (error) {
@@ -47,6 +95,9 @@ exports.askLegalAI = async (req, res) => {
   }
 };
 
+// ==========================================
+// 2. DALL-E IMAGE GENERATION
+// ==========================================
 exports.generateImageAI = async (req, res) => {
   try {
     const { prompt } = req.body;

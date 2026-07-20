@@ -20,7 +20,7 @@ interface NotificationContextProps {
   deleteNotification: (id: string) => Promise<void>;
   clearAllNotifications: () => Promise<void>;
   deleteMultipleNotifications: (ids: string[]) => Promise<void>;
-  handleNotificationRedirect: (data: any) => void;
+  handleNotificationRedirect: (data: any, explicitType?: string) => void | Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextProps | undefined>(undefined);

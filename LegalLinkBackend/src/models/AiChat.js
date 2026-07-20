@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// AI CHAT SCHEMA DEFINITION
+// ==========================================
 const aiChatSchema = new mongoose.Schema({
   userId: { 
     type: mongoose.Schema.Types.ObjectId, 
@@ -20,4 +26,7 @@ const aiChatSchema = new mongoose.Schema({
   }
 });
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 module.exports = mongoose.model('AiChat', aiChatSchema);

@@ -1,3 +1,6 @@
+// ==========================================
+// 1. IMPORTS & ENVIRONMENT CONFIG
+// ==========================================
 const express = require('express');
 const dotenv = require('dotenv');
 const multer = require('multer');
@@ -7,19 +10,18 @@ const mongoose = require('mongoose');
 const path = require('path');
 const http = require('http');
 const { Server } = require('socket.io');
-const nodemailer = require('nodemailer'); // <--- ADDED
+const nodemailer = require('nodemailer');
 
 dotenv.config();
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const connectDB = require('./src/config/db');
-// Socket Service & Notification Service
 const socketService = require('./src/services/socketService');
 const { createAndSendNotification } = require('./src/services/notificationService');
 const { protect } = require('./src/middlewares/authMiddleware');
 
-// Routes
+// Route Imports
 const authRoutes = require('./src/routes/authRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const aiRoutes = require('./src/routes/aiRoutes');
@@ -31,6 +33,9 @@ const Message = require('./src/models/Message');
 const Booking = require('./src/models/Booking');
 const User = require('./src/models/User');
 
+// ==========================================
+// 2. DATABASE CONNECTION & SERVER INIT
+// ==========================================
 connectDB();
 
 const app = express();
@@ -38,8 +43,9 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: "*" } });
 socketService.init(io);
 
-
-// --- MIDDLEWARES (Sahi Order) ---
+// ==========================================
+// 3. MIDDLEWARES & STATIC SERVING
+// ==========================================
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -61,7 +67,9 @@ if (!fs.existsSync(evidenceUploadDir)) {
   fs.mkdirSync(evidenceUploadDir, { recursive: true });
 }
 
-// Multer Setup
+// ==========================================
+// 4. MULTER & FILE STORAGE CONFIG
+// ==========================================
 const storage = multer.diskStorage({
   destination: uploadDir,
   filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
@@ -74,7 +82,9 @@ const chatStorage = multer.diskStorage({
 });
 const uploadChatFile = multer({ storage: chatStorage });
 
-// Socket.io Logic & User Directory
+// ==========================================
+// 5. REALTIME SOCKET.IO HANDLERS
+// ==========================================
 const { connectedUsers } = require('./src/services/socketService');
 
 io.on('connection', (socket) => {
@@ -111,15 +121,7 @@ io.on('connection', (socket) => {
           ? booking.lawyerId
           : booking.clientId;
         
-        let senderUser = await User.findById(data.sender);
-        if (!senderUser) {
-          const ClientModel = require('./src/models/Client');
-          senderUser = await ClientModel.findById(data.sender);
-        }
-        if (!senderUser) {
-          const LawyerModel = require('./src/models/Lawyer');
-          senderUser = await LawyerModel.findById(data.sender);
-        }
+        const senderUser = await User.findById(data.sender);
         const senderName = senderUser ? senderUser.name : "Legal Link Contact";
         
         let bodyText = data.text || "Sent an attachment 📎";
@@ -190,7 +192,9 @@ io.on('connection', (socket) => {
   });
 });
 
-// --- API ROUTES ---
+// ==========================================
+// 6. STRIPE PAYMENT INTENT ROUTE
+// ==========================================
 app.post('/api/bookings/payment/intent', async (req, res) => {
   try {
     const { amount, bookingId } = req.body;
@@ -203,6 +207,9 @@ app.post('/api/bookings/payment/intent', async (req, res) => {
   } catch (error) { return res.status(500).json({ success: false, message: "Payment setup failed" }); }
 });
 
+// ==========================================
+// 7. CHAT MEDIA & AUDIO UPLOAD HANDLERS
+// ==========================================
 // Helper to save base64 chat attachments
 const saveBase64ChatFile = (base64Str, filename, subfolder) => {
   try {
@@ -278,7 +285,9 @@ const handleChatFileUpload = (req, res) => {
 };
 app.post('/api/chat/upload-file', uploadChatMiddleware, handleChatFileUpload);
 
-// Route Registration
+// ==========================================
+// 8. ROUTE MODULE REGISTRATION
+// ==========================================
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
@@ -286,26 +295,18 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/complaints', complaintRoutes); 
 app.use('/api/notifications', notificationRoutes);
 
+// ==========================================
+// 9. CHAT & MESSAGE MANAGEMENT ENDPOINTS
+// ==========================================
 app.get('/api/chat/:bookingId', protect, async (req, res) => {
   try {
     const userId = req.user._id || req.user.id;
-    const bookingId = req.params.bookingId;
-    
-    // Ensure chat has not been deleted by this user
-    const booking = await Booking.findById(bookingId);
-    if (!booking || (booking.deletedBy && booking.deletedBy.includes(userId))) {
-      return res.status(404).json({ success: false, message: "Chat not found" });
-    }
-
     const messages = await Message.find({ 
-      bookingId,
+      bookingId: req.params.bookingId,
       deletedBy: { $ne: userId }
     }).sort({ createdAt: 1 });
     res.status(200).json({ success: true, messages });
-  } catch (err) { 
-    console.error("Fetch Chat History Error:", err);
-    res.status(500).json({ success: false, message: "Error fetching history" }); 
-  }
+  } catch (err) { res.status(500).json({ success: false, message: "Error fetching history" }); }
 });
 
 app.get('/api/chat/list/:userId', async (req, res) => {
@@ -325,58 +326,18 @@ app.get('/api/chat/list/:userId', async (req, res) => {
       }).sort({ createdAt: -1 }).lean();
 
       let chatObj = chat.toObject ? chat.toObject() : chat;
-      if (!chatObj.clientId || !chatObj.clientId.name) {
+      if (!chatObj.clientId) {
         const rawBooking = await Booking.findById(chat._id).select('clientId');
-        const targetClientId = rawBooking?.clientId || (chatObj.clientId?._id || chatObj.clientId);
-        if (targetClientId) {
-          const ClientModel = require('./src/models/Client');
-          const clientDoc = await ClientModel.findById(targetClientId).select('name profilePic profilePicUri');
-          if (clientDoc) {
-            chatObj.clientId = {
-              _id: clientDoc._id,
-              name: clientDoc.name,
-              profilePic: clientDoc.profilePic,
-              profilePicUri: clientDoc.profilePicUri
-            };
-          } else {
-            const LawyerModel = require('./src/models/Lawyer');
-            const lawyerClient = await LawyerModel.findById(targetClientId).select('name profilePic profilePicUri');
-            if (lawyerClient) {
-              chatObj.clientId = {
-                _id: lawyerClient._id,
-                name: lawyerClient.name,
-                profilePic: lawyerClient.profilePic,
-                profilePicUri: lawyerClient.profilePicUri
-              };
-            }
-          }
-        }
-      }
-
-      if (!chatObj.lawyerId || !chatObj.lawyerId.name) {
-        const rawBooking = await Booking.findById(chat._id).select('lawyerId');
-        const targetLawyerId = rawBooking?.lawyerId || (chatObj.lawyerId?._id || chatObj.lawyerId);
-        if (targetLawyerId) {
+        if (rawBooking && rawBooking.clientId) {
           const LawyerModel = require('./src/models/Lawyer');
-          const lawyerDoc = await LawyerModel.findById(targetLawyerId).select('name profilePic profilePicUri');
-          if (lawyerDoc) {
-            chatObj.lawyerId = {
-              _id: lawyerDoc._id,
-              name: lawyerDoc.name,
-              profilePic: lawyerDoc.profilePic,
-              profilePicUri: lawyerDoc.profilePicUri
+          const lawyerClient = await LawyerModel.findById(rawBooking.clientId).select('name profilePic profilePicUri');
+          if (lawyerClient) {
+            chatObj.clientId = {
+              _id: lawyerClient._id,
+              name: lawyerClient.name,
+              profilePic: lawyerClient.profilePic,
+              profilePicUri: lawyerClient.profilePicUri
             };
-          } else {
-            const ClientModel = require('./src/models/Client');
-            const clientDoc = await ClientModel.findById(targetLawyerId).select('name profilePic profilePicUri');
-            if (clientDoc) {
-              chatObj.lawyerId = {
-                _id: clientDoc._id,
-                name: clientDoc.name,
-                profilePic: clientDoc.profilePic,
-                profilePicUri: clientDoc.profilePicUri
-              };
-            }
           }
         }
       }
@@ -458,6 +419,9 @@ app.delete('/api/chat/chat/:bookingId', protect, async (req, res) => {
   }
 });
 
+// ==========================================
+// 10. BACKGROUND JOBS & HEALTH CHECK
+// ==========================================
 app.get('/api/health', (req, res) => res.json({ status: 'OK' }));
 
 // Background job to clean up expired bookings (payment deadline passed)
@@ -499,9 +463,11 @@ setInterval(async () => {
   } catch (error) {
     console.error("[Expiry Job] Error checking expired bookings:", error);
   }
-}, 30000); // Check every 30 seconds
+}, 30000); 
 
-// Global Error Handler
+// ==========================================
+// 11. GLOBAL ERROR HANDLER & SERVER LISTEN
+// ==========================================
 app.use((err, req, res, next) => {
   console.error("Global Error Handler:", err.stack);
   res.status(500).json({ success: false, message: 'Internal Server Error' });

@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../../../components/Common/Header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { LawyerStyles as styles } from '../../../theme/styles/LawyerStyles';
+import { ClientStyles as styles } from '../../../theme/styles/ClientStyles';
 import ProfileCard from '../../../components/Common/ProfileCard/ProfileCard';
 import { MyButton } from '../../../components/Common/MyButton';
 
@@ -108,7 +108,6 @@ const AppointmentSummary = ({ route, navigation }: any) => {
             ...lawyerData,
             role: 'Lawyer'
           }}
-          // Props jo ProfileCard component ke update hone ke baad valid hain
           onCheckPress={() => navigation.navigate('LawyerProfile', { lawyerId: lawyerData?._id, viewOnly: true })}
         />
       </ScrollView>

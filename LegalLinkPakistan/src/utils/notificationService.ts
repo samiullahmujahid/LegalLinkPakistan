@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & MODULE SAFETY CHECK
+// ==========================================
 import notifee, { AndroidImportance, EventType } from '@notifee/react-native';
 
 // Safe check to see if Notifee native module is successfully loaded
@@ -10,6 +13,9 @@ try {
   console.warn('[NotificationService] Notifee native module is not built or loaded yet.');
 }
 
+// ==========================================
+// NOTIFICATION SERVICE CLASS
+// ==========================================
 export class NotificationService {
   /**
    * Requests permission to display notifications (essential for iOS & Android 13+)

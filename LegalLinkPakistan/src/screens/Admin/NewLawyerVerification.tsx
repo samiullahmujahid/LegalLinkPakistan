@@ -4,11 +4,12 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // 👈 ADDED
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Modular Import ---
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
 import Header from '../../components/Common/Header';
+import { MyButton } from '../../components/Common/MyButton';
 
 const NewLawyerVerification = ({ navigation }: any) => {
   const [lawyers, setLawyers] = useState([]);
@@ -22,7 +23,7 @@ const NewLawyerVerification = ({ navigation }: any) => {
       
       const response = await axios.get("https://mug-work-public.ngrok-free.dev/api/admin/pending-lawyers", {
         headers: {
-          Authorization: `Bearer ${token}` // 👈 ADDED: Attach token
+          Authorization: `Bearer ${token}`
         }
       });
       
@@ -75,12 +76,12 @@ const NewLawyerVerification = ({ navigation }: any) => {
           </View>
         </View>
 
-        <TouchableOpacity 
-          style={s.checkBtn}
+        <MyButton 
+          title="Check"
           onPress={() => navigation.navigate('LawyerDetailVerify', { lawyerId: item._id })}
-        >
-          <Text style={s.checkBtnText}>Check</Text>
-        </TouchableOpacity>
+          style={[s.checkBtn, { height: undefined, width: undefined, marginTop: 0 }]}
+          textStyle={s.checkBtnText}
+        />
       </View>
     );
   };

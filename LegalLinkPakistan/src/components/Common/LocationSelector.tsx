@@ -83,7 +83,6 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
     <View style={styles.container}>
       {/* 1. Province Selection */}
       <View style={styles.dropdownWrapper}>
-        {!isClient && <Text style={styles.fieldLabel}>Province:</Text>}
         <Dropdown
           style={[
             customStyles.dropdown,
@@ -105,7 +104,6 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       {/* 2. District Selection */}
       <View style={styles.dropdownWrapper}>
-        {!isClient && <Text style={styles.fieldLabel}>District:</Text>}
         {province ? (
           <Dropdown
             style={[
@@ -133,7 +131,6 @@ export const LocationSelector: React.FC<LocationSelectorProps> = ({
 
       {/* 3. Tehsil Selection */}
       <View style={styles.dropdownWrapper}>
-        {!isClient && <Text style={styles.fieldLabel}>Tehsil:</Text>}
         {district ? (
           <Dropdown
             style={[
@@ -167,15 +164,15 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   dropdownWrapper: {
-    marginBottom: 10,
+    marginBottom: 12,
     width: '100%',
   },
   placeholderStyle: {
-    fontSize: 14,
-    color: '#64748b',
+    fontSize: 15,
+    color: '#999',
   },
   selectedTextStyle: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#000',
   },
   errorBorder: {
@@ -183,8 +180,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   disabledStyle: {
-    backgroundColor: '#f1f5f9',
-    borderColor: '#cbd5e1',
+    backgroundColor: '#F9F9F9',
+    borderColor: '#E0E0E0',
   },
   errorText: {
     color: 'red',
@@ -193,31 +190,31 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   fieldLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#333',
-    marginBottom: 4,
-    fontWeight: '500',
+    marginBottom: 5,
+    fontWeight: '600',
   },
 });
 
 const clientStyles = StyleSheet.create({
   dropdown: {
-    backgroundColor: '#fff',
+    backgroundColor: '#F9F9F9',
     borderRadius: 10,
-    height: 48,
+    height: 50,
     paddingHorizontal: 15,
     borderWidth: 1,
-    borderColor: '#001a4d',
+    borderColor: '#E0E0E0',
   },
 });
 
 const lawyerStyles = StyleSheet.create({
   dropdown: {
-    backgroundColor: '#fff',
+    backgroundColor: '#F9F9F9',
     borderRadius: 10,
-    height: 48,
+    height: 50,
     paddingHorizontal: 15,
     borderWidth: 1,
-    borderColor: '#001a4d',
+    borderColor: '#E0E0E0',
   },
 });

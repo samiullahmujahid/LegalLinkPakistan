@@ -1,10 +1,12 @@
+// ==========================================
+// IMPORTS & TRANSPORTER SETUP
+// ==========================================
 const Admin = require('../models/Admin');
 const Lawyer = require('../models/Lawyer');
 const Client = require('../models/Client');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 
-// Nodemailer Transporter Setup
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -13,7 +15,9 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// --- 1. ADMIN LOGIN ---
+// ==========================================
+// 1. ADMIN AUTHENTICATION (LOGIN & OTP)
+// ==========================================
 const adminLogin = async (req, res) => {
     try {
         const { email, adminKey } = req.body;
@@ -55,7 +59,9 @@ const adminLogin = async (req, res) => {
     }
 };
 
-// --- 2. VERIFY OTP ---
+// ==========================================
+// 2. VERIFY & RESEND OTP
+// ==========================================
 const verifyOtp = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -92,7 +98,45 @@ const verifyOtp = async (req, res) => {
     }
 };
 
-// --- 3. DASHBOARD LOGIC ---
+const resendOtp = async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        console.log("Resend OTP attempt for admin:", email);
+
+        const admin = await Admin.findOne({ email });
+
+        if (!admin) {
+            console.log("Admin not found in DB");
+            return res.status(404).json({ success: false, message: "Admin not found" });
+        }
+
+        // OTP Generate (6 Digits)
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        admin.otp = otp;
+        admin.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
+        await admin.save();
+
+        // Send Email
+        await transporter.sendMail({
+            from: '"LegalLink Admin" <samiullahmujahid.pk@gmail.com>',
+            to: email,
+            subject: 'Admin Login OTP',
+            text: `Your new 6-digit OTP for LegalLink Admin login is: ${otp}`
+        });
+
+        console.log(`✅ OTP resent to ${email}: ${otp}`);
+        res.status(200).json({ success: true, message: "OTP resent to your email" });
+    } catch (error) {
+        console.error("Resend OTP Controller Error:", error);
+        res.status(500).json({ success: false, message: "Error: " + error.message });
+    }
+};
+
+// ==========================================
+// 3. DASHBOARD STATS & LAWYER VERIFICATION
+// ==========================================
 const getStats = async (req, res) => {
     try {
         const totalLawyers = await Lawyer.countDocuments({ status: 'approved' });
@@ -130,4 +174,7 @@ const updateLawyerStatus = async (req, res) => {
     }
 };
 
-module.exports = { adminLogin, verifyOtp, getStats, getPendingLawyers, updateLawyerStatus };
+// ==========================================
+// MODULE EXPORTS
+// ==========================================
+module.exports = { adminLogin, verifyOtp, resendOtp, getStats, getPendingLawyers, updateLawyerStatus };

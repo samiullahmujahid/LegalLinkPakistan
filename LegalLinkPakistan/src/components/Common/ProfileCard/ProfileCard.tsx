@@ -10,8 +10,11 @@ interface ProfileCardProps {
     enNo?: string;
     city?: string;
     rating?: number | string;
+    averageRating?: number | string;
+    totalReviews?: number;
     expertise?: string;
-    address?: string;
+    areasOfPractice?: string[] | string;
+    address?: any;
     profilePicUri?: string;
   };
   isSelected?: boolean;
@@ -36,8 +39,35 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
   const isLawyer = role.toLowerCase() === 'lawyer';
 
   const getRating = () => {
-    const val = Number(userData.rating || 0);
+    const val = Number(userData.averageRating || userData.rating || 0);
     return isNaN(val) ? 0 : val;
+  };
+
+  const getExpertise = () => {
+    let areas = userData.expertise || userData.areasOfPractice;
+    if (!areas) return 'Legal Expert';
+    if (Array.isArray(areas)) {
+      return areas.join(', ');
+    }
+    if (typeof areas === 'string') {
+      return areas.replace(/[\[\]\"']/g, '').replace(/,\s*/g, ', ').trim();
+    }
+    return 'Legal Expert';
+  };
+
+  const getOfficeAddress = () => {
+    const addr = userData.address;
+    if (!addr) return userData.city || 'N/A';
+    if (typeof addr === 'string') return addr.replace(/[\[\]\"']/g, '').trim();
+    
+    const parts = [];
+    if (addr.street) parts.push(addr.street);
+    else if (addr.streetAddress) parts.push(addr.streetAddress);
+    
+    if (addr.city) parts.push(addr.city);
+    if (addr.district && addr.district !== addr.city) parts.push(addr.district);
+    
+    return parts.length > 0 ? parts.join(', ') : (userData.city || 'N/A');
   };
 
   const getCardImageSource = () => {
@@ -63,17 +93,24 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         </View>
 
         <View style={styles.infoSection}>
-          {/* Sahi Name Logic */}
+          {/* Name Formatting Logic */}
           <Text style={styles.nameText}>
             {isLawyer ? `Adv. ${userData.name}` : userData.name}
           </Text>
 
           {/* Role-based Subtext */}
           {isLawyer ? (
-            <Text style={styles.subText}>{userData.expertise || 'Legal Expert'}</Text>
+            <Text style={styles.subText}>{getExpertise()}</Text>
           ) : (
             <Text style={styles.subText} numberOfLines={1}>
               <Icon name="map-marker" size={12} color="#666" /> {userData.address || userData.city || 'N/A'}
+            </Text>
+          )}
+
+          {/* Office Address for Lawyer */}
+          {isLawyer && (
+            <Text style={[styles.subText, { marginTop: 2 }]} numberOfLines={1}>
+              <Icon name="map-marker" size={12} color="#666" /> {getOfficeAddress()}
             </Text>
           )}
           
@@ -87,7 +124,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                   color="#ffcc00" 
                 />
               ))}
-              <Text style={styles.ratingText}> ({getRating()})</Text>
+              <Text style={styles.ratingText}> {getRating().toFixed(1)} ({userData.totalReviews || 0})</Text>
             </View>
           )}
         </View>
@@ -111,7 +148,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
 };
 
 const styles = StyleSheet.create({
-  card: { flexDirection: 'row', backgroundColor: '#fff', padding: 15, borderRadius: 12, marginVertical: 8, borderWidth: 1, borderColor: '#e1e4e8', elevation: 3 },
+  card: { flexDirection: 'row', backgroundColor: '#fff', padding: 15, borderRadius: 12, marginVertical: 8, borderWidth: 1, borderColor: '#e1e4e8' },
   selectedCard: { borderColor: '#001a4d', backgroundColor: '#f0f4ff' },
   leftSection: { flexDirection: 'row', flex: 1, alignItems: 'center' },
   imageContainer: { width: 60, height: 60, borderRadius: 30, backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' },

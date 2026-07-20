@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & DEPENDENCIES
+// ==========================================
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
@@ -23,14 +26,19 @@ import { COLORS } from '../../theme/theme';
 import Header from '../../components/Common/Header';
 
 const { width } = Dimensions.get('window');
-const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
+const BASE_URL = "https://mug-work-public.ngrok-free.dev";
+const API_BASE = `${BASE_URL}/api`;
 
+// ==========================================
+// TYPES & HELPER COMPONENTS
+// ==========================================
 interface Message {
   id: string;
   text: string;
   sender: 'user' | 'ai';
   type?: 'text' | 'image';
   imageUri?: string;
+  recommendedLawyers?: any[];
 }
 
 const MarkdownText = ({ text, style }: { text: string; style: any }) => {
@@ -212,7 +220,8 @@ export const AiChatbotScreen = ({ navigation }: any) => {
             id: (Date.now() + 1).toString(),
             text: res.data.reply,
             sender: 'ai',
-            type: 'text'
+            type: 'text',
+            recommendedLawyers: res.data.recommendedLawyers || []
           }]);
         }
       }
@@ -244,7 +253,11 @@ export const AiChatbotScreen = ({ navigation }: any) => {
         }
       />
 
-      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView 
+        style={{ flex: 1 }} 
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 50 : 0}
+      >
         {/* Chat Log feed list */}
         <FlatList
           ref={flatListRef}
@@ -256,26 +269,78 @@ export const AiChatbotScreen = ({ navigation }: any) => {
             const isUser = item.sender === 'user';
             
             return (
-              <View style={[styles.messageRow, isUser ? styles.userRow : styles.aiRow]}>
-                <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
-                  {/* Local image preview inside chat message (vision upload) */}
-                  {item.imageUri && (
-                    <Image source={{ uri: item.imageUri }} style={styles.uploadedDocPreview} />
-                  )}
+              <View style={{ width: '100%' }}>
+                <View style={[styles.messageRow, isUser ? styles.userRow : styles.aiRow]}>
+                  <View style={[styles.bubble, isUser ? styles.userBubble : styles.aiBubble]}>
+                    {/* Local image preview inside chat message (vision upload) */}
+                    {item.imageUri && (
+                      <Image source={{ uri: item.imageUri }} style={styles.uploadedDocPreview} />
+                    )}
 
-                  {/* Render DALL-E output image or text */}
-                  {item.type === 'image' ? (
-                    <View style={styles.dalleImageWrapper}>
-                      <Image source={{ uri: item.text }} style={styles.dalleImg} />
-                      <Text style={styles.dalleLabel}>AI Generated Illustration 🎨</Text>
-                    </View>
-                  ) : (
-                    <MarkdownText 
-                      text={item.text} 
-                      style={isUser ? styles.userText : styles.aiText} 
-                    />
-                  )}
+                    {/* Render DALL-E output image or text */}
+                    {item.type === 'image' ? (
+                      <View style={styles.dalleImageWrapper}>
+                        <Image source={{ uri: item.text }} style={styles.dalleImg} />
+                        <Text style={styles.dalleLabel}>AI Generated Illustration 🎨</Text>
+                      </View>
+                    ) : (
+                      <MarkdownText 
+                        text={item.text} 
+                        style={isUser ? styles.userText : styles.aiText} 
+                      />
+                    )}
+                  </View>
                 </View>
+
+                {/* Interactive Lawyer Recommendation Cards */}
+                {!isUser && item.recommendedLawyers && item.recommendedLawyers.length > 0 && (
+                  <View style={styles.recommendationsList}>
+                    {item.recommendedLawyers.map((lawyer: any, idx: number) => {
+                      const imageSource = lawyer.profilePicUri 
+                        ? { uri: lawyer.profilePicUri.startsWith('http') ? lawyer.profilePicUri : `${BASE_URL}/uploads/${lawyer.profilePicUri}` }
+                        : null;
+                      
+                      return (
+                        <View key={lawyer._id || idx} style={styles.lawyerRecommendCard}>
+                          <View style={styles.recommendLeft}>
+                            <View style={styles.recommendAvatarBox}>
+                              {imageSource ? (
+                                <Image source={imageSource} style={styles.recommendAvatar} />
+                              ) : (
+                                <Icon name="account" size={24} color="#001a4d" />
+                              )}
+                            </View>
+                            <View style={styles.recommendInfo}>
+                              <Text style={styles.recommendName}>Adv. {lawyer.name}</Text>
+                              <Text style={styles.recommendSpecialty} numberOfLines={1}>{lawyer.expertise}</Text>
+                              <View style={styles.recommendRatingRow}>
+                                <Icon name="star" size={12} color="#ffcc00" />
+                                <Text style={styles.recommendRatingText}> 
+                                  {Number(lawyer.averageRating || 0).toFixed(1)} ({lawyer.totalReviews || 0})
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+                          
+                          <View style={styles.recommendActions}>
+                            <TouchableOpacity 
+                              style={styles.recommendBtnSecondary}
+                              onPress={() => navigation.navigate('LawyerProfile', { lawyerId: lawyer._id, viewOnly: true })}
+                            >
+                              <Text style={styles.recommendBtnTextSecondary}>Check details</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity 
+                              style={styles.recommendBtnPrimary}
+                              onPress={() => navigation.navigate('CaseDetails', { preselectedLawyerId: lawyer._id })}
+                            >
+                              <Text style={styles.recommendBtnTextPrimary}>Book Lawyer</Text>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      );
+                    })}
+                  </View>
+                )}
               </View>
             );
           }}
@@ -571,10 +636,9 @@ const styles = StyleSheet.create({
     fontSize: 12.5,
   },
   inputContainer: { 
-    padding: 10, 
-    backgroundColor: '#fff',
-    borderTopWidth: 1, 
-    borderTopColor: '#e2e8f0' 
+    paddingHorizontal: 12, 
+    paddingVertical: 8, 
+    backgroundColor: COLORS.lightBg,
   },
   searchBarWrapper: { 
     flexDirection: 'row', 
@@ -583,7 +647,7 @@ const styles = StyleSheet.create({
     borderColor: '#cbd5e1', 
     borderRadius: 24, 
     paddingHorizontal: 10, 
-    backgroundColor: '#f8fafc', 
+    backgroundColor: '#fff', 
     minHeight: 48 
   },
   actionIconBtn: {
@@ -600,6 +664,97 @@ const styles = StyleSheet.create({
   sendButton: { 
     marginLeft: 5 
   },
+  recommendationsList: {
+    paddingHorizontal: 15,
+    marginBottom: 16,
+  },
+  lawyerRecommendCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    padding: 12,
+    marginBottom: 8,
+  },
+  recommendLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  recommendAvatarBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#f1f5f9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+    overflow: 'hidden',
+  },
+  recommendAvatar: {
+    width: '100%',
+    height: '100%',
+  },
+  recommendInfo: {
+    flex: 1,
+  },
+  recommendName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#001a4d',
+  },
+  recommendSpecialty: {
+    fontSize: 11.5,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  recommendRatingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  recommendRatingText: {
+    fontSize: 11,
+    color: '#475569',
+    fontWeight: '600',
+    marginLeft: 3,
+  },
+  recommendActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    paddingTop: 8,
+  },
+  recommendBtnPrimary: {
+    backgroundColor: '#001a4d',
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    flex: 0.48,
+    alignItems: 'center',
+  },
+  recommendBtnTextPrimary: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  recommendBtnSecondary: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    flex: 0.48,
+    alignItems: 'center',
+  },
+  recommendBtnTextSecondary: {
+    color: '#001a4d',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
 });
 
+// ==========================================
+// EXPORTS
+// ==========================================
 export default AiChatbotScreen;

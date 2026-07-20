@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & MULTER CONFIG
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
@@ -22,16 +25,14 @@ const storage = multer.diskStorage({
     }
 });
 
-// Configure upload limits (Optional: set file size limit to 5MB if needed)
 const upload = multer({ 
     storage: storage,
     limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
 });
 
 // ==========================================
-// COMPLAINT ROUTES
+// 1. USER & ADMIN COMPLAINT ROUTES
 // ==========================================
-
 // 1. Submit a new complaint (Requires Auth + File Upload)
 router.post('/submit', protect, upload.single('evidence'), submitComplaint);
 
@@ -53,4 +54,7 @@ router.put('/acknowledge/:id', protect, acknowledgeWarning);
 // 7. Delete complaint
 router.delete('/delete/:id', protect, deleteComplaint);
 
+// ==========================================
+// EXPORTS
+// ==========================================
 module.exports = router;

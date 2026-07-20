@@ -1,14 +1,20 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// COMPLAINT SCHEMA DEFINITION
+// ==========================================
 const ComplaintSchema = new mongoose.Schema({
     clientId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Client', // Sahi reference
+        ref: 'Client',
         required: true
     },
     lawyerId: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Lawyer', // Sahi reference
+        ref: 'Lawyer',
         required: true
     },
     bookingId: {
@@ -54,8 +60,11 @@ const ComplaintSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-    toJSON: { virtuals: true }, // Populate ke liye zaroori
+    toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 module.exports = mongoose.model('Complaint', ComplaintSchema);

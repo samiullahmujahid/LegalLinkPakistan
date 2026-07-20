@@ -1,8 +1,14 @@
+// ==========================================
+// IMPORTS & MODELS
+// ==========================================
 const jwt = require('jsonwebtoken');
 const Client = require('../models/Client');
 const Lawyer = require('../models/Lawyer');
 const Admin = require('../models/Admin');
 
+// ==========================================
+// 1. JWT PROTECT MIDDLEWARE & SUSPENSION CHECK
+// ==========================================
 const protect = async (req, res, next) => {
     let token;
 
@@ -58,11 +64,13 @@ const protect = async (req, res, next) => {
 
             // 6. User exist check
             if (!user) {
-                console.error("DEBUG: Database mein user nahi mila. ID:", userId);
+                console.error("DEBUG: User not found in database. ID:", userId);
                 return res.status(401).json({ success: false, message: 'User not found in DB.' });
             }
 
-            // --- Suspension Check ---
+            // ==========================================
+            // SUSPENSION CHECK & AUTO-LIFT
+            // ==========================================
             if (user.isSuspended) {
                 if (user.suspendedUntil && new Date(user.suspendedUntil) < new Date()) {
                     // Auto lift suspension
@@ -113,4 +121,7 @@ const protect = async (req, res, next) => {
     }
 };
 
+// ==========================================
+// EXPORTS
+// ==========================================
 module.exports = { protect };

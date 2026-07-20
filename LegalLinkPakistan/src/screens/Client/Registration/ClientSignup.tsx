@@ -55,11 +55,11 @@ const ClientSignup: React.FC<{ navigation: any }> = ({ navigation }) => {
     <SafeAreaView style={globalStyles.container}>
       <Header title="Client Registration" showBackButton={true} />
       <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined} 
         style={{ flex: 1 }}
       >
         <ScrollView 
-          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40, justifyContent: 'center' }} 
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 40, justifyContent: 'flex-start' }} 
           showsVerticalScrollIndicator={false}
         >
           <View style={{ width: '100%', paddingHorizontal: 40, justifyContent: 'center' }}>
@@ -70,6 +70,7 @@ const ClientSignup: React.FC<{ navigation: any }> = ({ navigation }) => {
             </View>
 
             <View style={globalStyles.form}>
+              <Text style={{ fontSize: 14, color: '#001a4d', marginVertical: 8, fontWeight: 'bold' }}>Profile Details:</Text>
               <MyInput 
                 placeholder="Full Name" 
                 onChangeText={(val) => {
@@ -129,6 +130,7 @@ const ClientSignup: React.FC<{ navigation: any }> = ({ navigation }) => {
                 styleType="client"
               />
 
+              <Text style={{ fontSize: 14, color: '#001a4d', marginVertical: 8, fontWeight: 'bold' }}>Password:</Text>
               <MyInput 
                 placeholder="Password" 
                 isPassword={true} 

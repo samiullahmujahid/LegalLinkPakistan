@@ -8,8 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { LawyerStyles as styles } from '../../../theme/styles/LawyerStyles';
 import Bottombar from '../../../components/Common/BottomBar/Bottombar';
-
 import StatusCard from '../../../components/Common/StatusCard/StatusCard';
+import Header from '../../../components/Common/Header';
 
 const ClientRequests = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();
@@ -137,20 +137,15 @@ const ClientRequests = ({ navigation }: any) => {
 
   return (
     <SafeAreaView style={styles.requestContainer}>
-      <View style={[
-        styles.reqBookingHeader,
-        {
-          height: undefined,
-          paddingTop: Platform.OS === 'ios' ? insets.top + 10 : insets.top + 15,
-          paddingBottom: 15,
+      <Header 
+        title="Incoming Client Requests" 
+        showBackButton={false}
+        rightElement={
+          <TouchableOpacity onPress={fetchIncomingRequests} style={{ padding: 4 }}>
+            <Icon name="refresh" size={24} color="#fff" />
+          </TouchableOpacity>
         }
-      ]}>
-        <View style={{ width: 28 }} />
-        <Text style={styles.reqBookingHeaderTitle}>Incoming Client Requests</Text>
-        <TouchableOpacity onPress={fetchIncomingRequests}>
-          <Icon name="refresh" size={24} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      />
 
       {loading ? (
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>

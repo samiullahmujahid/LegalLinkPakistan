@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// USER SCHEMA DEFINITION
+// ==========================================
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -38,4 +44,7 @@ const UserSchema = new mongoose.Schema({
   }
 });
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 module.exports = mongoose.model('User', UserSchema);

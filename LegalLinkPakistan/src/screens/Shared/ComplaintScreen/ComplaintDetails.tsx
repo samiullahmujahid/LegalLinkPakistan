@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, ScrollView, Alert, TouchableOpacity, ActivityIndicator, TextInput, StyleSheet, Image, Platform } from 'react-native';
+import { View, Text, SafeAreaView, ScrollView, Alert, TouchableOpacity, ActivityIndicator, TextInput, StyleSheet, Image, Platform, KeyboardAvoidingView } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
@@ -124,7 +124,11 @@ const ComplaintDetails = ({ route, navigation }: any) => {
     <SafeAreaView style={styles.container}>
       <Header title="Details" />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.content}>
         
         {/* Stepper Status Progress */}
         {renderStepper()}
@@ -233,6 +237,7 @@ const ComplaintDetails = ({ route, navigation }: any) => {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

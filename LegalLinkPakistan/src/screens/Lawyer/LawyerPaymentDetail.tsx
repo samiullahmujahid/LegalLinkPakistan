@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, Image, 
-  ScrollView, SafeAreaView, Alert, ActivityIndicator, Platform
+  ScrollView, SafeAreaView, Alert, ActivityIndicator, Platform, KeyboardAvoidingView
 } from 'react-native';
 import axios from 'axios'; 
 import { LawyerStyles as ls } from '../../theme/styles/LawyerStyles';
+import Header from '../../components/Common/Header';
 
 const LawyerPaymentDetail = ({ navigation, route }: any) => {
   const { allData } = route.params || {};
@@ -99,11 +100,13 @@ const LawyerPaymentDetail = ({ navigation, route }: any) => {
 
   return (
     <SafeAreaView style={ls.container}>
-      <TouchableOpacity style={ls.backBtn} onPress={() => navigation.goBack()} disabled={loading}>
-        <Text style={ls.backText}>Back</Text>
-      </TouchableOpacity>
+      <Header title="Payment Details" showBackButton={true} onBackPress={() => navigation.goBack()} />
 
-      <ScrollView contentContainerStyle={ls.scrollContent}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={ls.scrollContent}>
         <View style={ls.headerSection}>
           <Image source={require('../../assets/images/logo.png')} style={ls.logo} />
           <Text style={ls.brandName}>Legal Link Pakistan</Text>
@@ -168,6 +171,7 @@ const LawyerPaymentDetail = ({ navigation, route }: any) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

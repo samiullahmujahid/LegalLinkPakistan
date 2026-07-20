@@ -1,3 +1,6 @@
+// ==========================================
+// IMPORTS & CONTROLLERS
+// ==========================================
 const express = require('express');
 const router = express.Router();
 const { protect } = require('../middlewares/authMiddleware');
@@ -10,7 +13,9 @@ const {
   deleteMultipleNotifications
 } = require('../controllers/notificationController');
 
-// All notification routes are protected
+// ==========================================
+// 1. NOTIFICATION ENDPOINTS
+// ==========================================
 router.get('/', protect, getMyNotifications);
 router.put('/read-all', protect, markAllAsRead);
 router.put('/:id/read', protect, markAsRead);
@@ -18,4 +23,7 @@ router.delete('/clear-all', protect, deleteAllNotifications);
 router.post('/delete-multiple', protect, deleteMultipleNotifications);
 router.delete('/:id', protect, deleteNotification);
 
+// ==========================================
+// EXPORTS
+// ==========================================
 module.exports = router;

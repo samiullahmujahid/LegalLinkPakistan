@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, Image, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator 
+  View, Text, Image, ScrollView, TouchableOpacity, Alert, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform
 } from 'react-native';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Styles Import (Rasta sahi check kar lijiye ga)
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
 import Header from '../../components/Common/Header';
+import { MyButton } from '../../components/Common/MyButton';
 
 const LawyerDetailVerify = ({ route, navigation }: any) => {
   const { lawyerId } = route.params;
@@ -76,8 +76,12 @@ const LawyerDetailVerify = ({ route, navigation }: any) => {
         showBackButton={true} 
       />
 
-      <ScrollView contentContainerStyle={s.scrollContent}>
-        <View style={s.infoCard}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={s.scrollContent}>
+          <View style={s.infoCard}>
           <Text style={s.sectionLabel}>Personal Details</Text>
           <Text style={s.detailText}>Name: <Text style={s.bold}>{lawyer?.name}</Text></Text>
           <Text style={s.detailText}>Email: <Text style={s.bold}>{lawyer?.email}</Text></Text>
@@ -113,25 +117,26 @@ const LawyerDetailVerify = ({ route, navigation }: any) => {
         />
 
         <View style={s.btnRow}>
-          <TouchableOpacity 
-            style={[s.actionBtn, s.rejectBtn]} 
+          <MyButton 
+            title="Reject"
             onPress={() => handleStatusUpdate('rejected')}
             disabled={actionLoading}
-          >
-            <Text style={s.btnText}>Reject</Text>
-          </TouchableOpacity>
+            style={[s.actionBtn, s.rejectBtn, { height: undefined, marginTop: 0 }]}
+            textStyle={s.btnText}
+          />
 
-          <TouchableOpacity 
-            style={[s.actionBtn, s.approveBtn]} 
+          <MyButton 
+            title="Approve"
             onPress={() => handleStatusUpdate('approved')}
             disabled={actionLoading}
-          >
-            <Text style={s.btnText}>Approve</Text>
-          </TouchableOpacity>
+            style={[s.actionBtn, s.approveBtn, { height: undefined, marginTop: 0 }]}
+            textStyle={s.btnText}
+          />
         </View>
         
         {actionLoading && <ActivityIndicator color="#001a4d" style={{marginTop: 10}} />}
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };

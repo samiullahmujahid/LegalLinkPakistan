@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   View, Text, SafeAreaView, TouchableOpacity, 
-  Alert, ActivityIndicator, StyleSheet, TextInput, ScrollView, Image, Platform
+  Alert, ActivityIndicator, StyleSheet, TextInput, ScrollView, Image, Platform, KeyboardAvoidingView
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Header from '../../../components/Common/Header';
@@ -132,7 +132,11 @@ const ComplaintScreen = ({ route, navigation }: any) => {
     <SafeAreaView style={styles.container}>
       <Header title="File a Complaint" />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1 }}
+      >
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Target User Profile Card */}
         {profileLoading ? (
           <View style={styles.targetCardLoader}>
@@ -228,6 +232,7 @@ const ComplaintScreen = ({ route, navigation }: any) => {
           ]}
         />
       </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

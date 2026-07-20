@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// NOTIFICATION SCHEMA DEFINITION
+// ==========================================
 const NotificationSchema = new mongoose.Schema({
   recipient: {
     type: mongoose.Schema.Types.ObjectId,
@@ -33,4 +39,7 @@ const NotificationSchema = new mongoose.Schema({
   }
 });
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 module.exports = mongoose.model('Notification', NotificationSchema);

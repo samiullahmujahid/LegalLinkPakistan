@@ -33,6 +33,21 @@ const ChatScreen = ({ route, navigation }: any) => {
   const [selectedMsgIds, setSelectedMsgIds] = useState<string[]>([]);
   const [blink, setBlink] = useState(true);
 
+  const flatListRef = useRef<FlatList>(null);
+  const messagesRef = useRef(messages);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+
+  const scrollToBottom = (animated = true) => {
+    if (messagesRef.current.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated });
+      }, 100);
+    }
+  };
+
   useEffect(() => {
     const backAction = () => {
       navigation.navigate('ChatsList');
@@ -50,7 +65,17 @@ const ChatScreen = ({ route, navigation }: any) => {
         AsyncStorage.setItem(`lastRead_${bookingId}`, lastMsgId).catch(err => console.log(err));
       }
     }
+    scrollToBottom(true);
   }, [messages, bookingId]);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', () => {
+      scrollToBottom(true);
+    });
+    return () => {
+      showSubscription.remove();
+    };
+  }, []);
 
   const deleteSelectedMessages = () => {
     if (selectedMsgIds.length === 0) return;
@@ -596,7 +621,11 @@ const ChatScreen = ({ route, navigation }: any) => {
   };
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 60 : 0}
+    >
       <View style={chatStyles.container}>
         <StatusBar barStyle="light-content" />
         <View style={[chatStyles.header, { paddingTop: headerPaddingTop, paddingBottom: 15 }]}>
@@ -649,6 +678,7 @@ const ChatScreen = ({ route, navigation }: any) => {
         </View>
 
         <FlatList
+          ref={flatListRef}
           data={messages}
           keyExtractor={(item, index) => item.id || item._id || index.toString()}
           contentContainerStyle={{ paddingBottom: 15 }}

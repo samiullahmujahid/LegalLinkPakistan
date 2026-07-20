@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MONGOOSE SETUP
+// ==========================================
 const mongoose = require('mongoose');
 
+// ==========================================
+// CLIENT SCHEMA DEFINITION
+// ==========================================
 const ClientSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
@@ -20,4 +26,7 @@ const ClientSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 }, { collection: 'clients' }); 
 
+// ==========================================
+// MODEL EXPORT
+// ==========================================
 module.exports = mongoose.model('Client', ClientSchema);

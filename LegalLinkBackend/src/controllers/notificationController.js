@@ -1,5 +1,11 @@
+// ==========================================
+// IMPORTS & MODELS
+// ==========================================
 const Notification = require('../models/Notification');
 
+// ==========================================
+// 1. FETCH NOTIFICATIONS
+// ==========================================
 // 1. Get current user's notifications
 exports.getMyNotifications = async (req, res) => {
   try {
@@ -15,6 +21,9 @@ exports.getMyNotifications = async (req, res) => {
   }
 };
 
+// ==========================================
+// 2. MARK NOTIFICATIONS AS READ
+// ==========================================
 // 2. Mark single notification as read
 exports.markAsRead = async (req, res) => {
   try {
@@ -55,6 +64,9 @@ exports.markAllAsRead = async (req, res) => {
   }
 };
 
+// ==========================================
+// 3. DELETE NOTIFICATIONS
+// ==========================================
 // 4. Delete single notification
 exports.deleteNotification = async (req, res) => {
   try {
@@ -98,14 +110,15 @@ exports.deleteMultipleNotifications = async (req, res) => {
   try {
     const { ids } = req.body;
     const userId = req.user._id || req.user.id;
-    console.log(`[Backend] deleteMultipleNotifications called for IDs:`, ids, `user ID: ${userId}`);
 
-    if (!ids || !Array.isArray(ids)) {
-      return res.status(400).json({ success: false, message: "Invalid or missing notification IDs" });
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ success: false, message: "No notification IDs provided" });
     }
 
-    const result = await Notification.deleteMany({ _id: { $in: ids }, recipient: userId });
-    console.log(`[Backend] deleteMultipleNotifications result:`, result);
+    await Notification.deleteMany({
+      _id: { $in: ids },
+      recipient: userId
+    });
 
     return res.status(200).json({ success: true, message: "Selected notifications deleted successfully" });
   } catch (error) {

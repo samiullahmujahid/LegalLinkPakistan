@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, Text, Image, TouchableOpacity, SafeAreaView, TextInput, Alert, ActivityIndicator 
 } from 'react-native';
@@ -7,6 +7,7 @@ import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import Icon from 'react-native-vector-icons/Ionicons'; 
 
 // --- Imports from Theme & Styles ---
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
@@ -25,7 +26,38 @@ const AdminVerify: React.FC<Props> = ({ navigation, route }) => {
   const { email } = route.params; 
   const [otp, setOtp] = useState<string[]>(['', '', '', '', '', '']); 
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [countdown, setCountdown] = useState(60);
   const inputRefs = useRef<TextInput[]>([]);
+
+  useEffect(() => {
+    let timer: any;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  const handleResendOTP = async () => {
+    if (countdown > 0 || resendLoading) return;
+
+    setResendLoading(true);
+    try {
+      const response = await axios.post("https://mug-work-public.ngrok-free.dev/api/admin/resend-otp", {
+        email: email
+      });
+
+      if (response.data.success || response.status === 200) {
+        Alert.alert("Success", "A new OTP has been sent to your email.");
+        setCountdown(60); // Reset timer
+      }
+    } catch (error: any) {
+      const msg = error.response?.data?.message || "Failed to resend OTP";
+      Alert.alert("Error", msg);
+    } finally {
+      setResendLoading(false);
+    }
+  };
 
   const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
@@ -79,8 +111,11 @@ const AdminVerify: React.FC<Props> = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={s.container}>
-      <TouchableOpacity style={s.backBtn} onPress={() => navigation.goBack()}>
-        <Text style={s.backText}>Back</Text>
+      <TouchableOpacity 
+        style={[s.backBtn, { borderWidth: 0, paddingHorizontal: 12, paddingVertical: 8 }]} 
+        onPress={() => navigation.goBack()}
+      >
+        <Icon name="arrow-back" size={24} color="#001a4d" />
       </TouchableOpacity>
 
       <View style={s.inner}>
@@ -115,8 +150,25 @@ const AdminVerify: React.FC<Props> = ({ navigation, route }) => {
           disabled={loading}
           style={{ borderRadius: 25, marginTop: 40 }} 
         />
+
+        <View style={{ marginTop: 25, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+          <Text style={{ color: '#666', fontSize: 14 }}>Didn't receive the code? </Text>
+          <TouchableOpacity 
+            onPress={handleResendOTP} 
+            disabled={countdown > 0 || resendLoading}
+          >
+            <Text style={{ 
+              color: countdown > 0 ? '#aaa' : (COLORS.primary || '#001a4d'), 
+              fontWeight: 'bold', 
+              fontSize: 14,
+              textDecorationLine: countdown > 0 ? 'none' : 'underline'
+            }}>
+              {countdown > 0 ? `Resend in ${countdown}s` : "Resend OTP"}
+            </Text>
+          </TouchableOpacity>
+        </View>
         
-        {loading && <ActivityIndicator size="large" color={COLORS.primary} style={s.loader} />}
+        {(loading || resendLoading) && <ActivityIndicator size="large" color={COLORS.primary} style={s.loader} />}
       </View>
     </SafeAreaView>
   );
