@@ -34,7 +34,7 @@ export class NotificationService {
   }
 
   /**
-   * Creates the default Android notification channel (required for Android 8.0+)
+   * Creates the default & call Android notification channels (required for Android 8.0+)
    */
   public static async createChannels() {
     if (!isNotifeeAvailable) {
@@ -47,6 +47,14 @@ export class NotificationService {
         name: 'General Notifications',
         importance: AndroidImportance.HIGH,
         vibration: true,
+      });
+
+      await notifee.createChannel({
+        id: 'calls',
+        name: 'Incoming Call Alerts',
+        importance: AndroidImportance.HIGH,
+        vibration: true,
+        sound: 'default',
       });
     } catch (error) {
       console.warn('[NotificationService] Failed to create notification channel:', error);
@@ -62,6 +70,8 @@ export class NotificationService {
       return;
     }
     try {
+      const channelId = type === 'call' ? 'calls' : 'default';
+
       // Trigger native notification
       await notifee.displayNotification({
         title,
@@ -71,8 +81,9 @@ export class NotificationService {
           type,
         },
         android: {
-          channelId: 'default',
+          channelId,
           smallIcon: 'ic_launcher', // Default app launcher icon
+          importance: type === 'call' ? AndroidImportance.HIGH : AndroidImportance.DEFAULT,
           pressAction: {
             id: 'default',
           },

@@ -7,6 +7,7 @@ import { NotificationService } from '../../utils/notificationService';
 import { navigationRef } from '../../navigation/AppNavigator';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../theme/theme';
+import IncomingCallModal from './IncomingCallModal';
 
 const { width } = Dimensions.get('window');
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
@@ -38,6 +39,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
+
+  // Incoming Call Overlay Modal State
+  const [incomingCallData, setIncomingCallData] = useState<any>(null);
 
   // Foreground Toast Animation State
   const [currentToast, setCurrentToast] = useState<any>(null);
@@ -307,40 +311,27 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     };
 
-    const handleIncomingCall = (data: any) => {
+    const handleIncomingCall = async (data: any) => {
       console.log('[NotificationProvider] Received global incomingCall:', data);
 
-      Alert.alert(
-        "Incoming Call",
-        `Incoming ${data.isVideo ? 'Video' : 'Voice'} Call from ${data.callerName || 'Legal Partner'}...`,
-        [
-          {
-            text: "Decline",
-            onPress: () => {
-              socket.emit('callLog', { bookingId: data.bookingId, message: 'Call declined' });
-            },
-            style: "cancel"
-          },
-          {
-            text: "Accept",
-            onPress: () => {
-              if (navigationRef.isReady()) {
-                navigationRef.navigate('CallScreen', {
-                  socket,
-                  bookingId: data.bookingId,
-                  partnerId: data.callerId,
-                  partnerName: data.callerName || 'Legal Partner',
-                  partnerPic: data.callerPic || '',
-                  isCaller: false,
-                  isVideo: data.isVideo,
-                  incomingSignal: data.signal,
-                  callerSocketId: data.from
-                });
-              }
-            }
-          }
-        ],
-        { cancelable: false }
+      // 1. Store incoming call data to show full screen IncomingCallModal
+      setIncomingCallData(data);
+
+      // 2. Trigger native OS system notification banner (works outside the app)
+      await NotificationService.displayNotification(
+        `Incoming ${data.isVideo ? 'Video' : 'Voice'} Call`,
+        `Tap to answer incoming call from ${data.callerName || 'Legal Partner'}`,
+        'call',
+        {
+          bookingId: data.bookingId,
+          partnerId: data.callerId,
+          partnerName: data.callerName || 'Legal Partner',
+          partnerPic: data.callerPic || '',
+          isCaller: false,
+          isVideo: data.isVideo,
+          incomingSignal: data.signal,
+          callerSocketId: data.from
+        }
       );
     };
 
@@ -363,6 +354,32 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       unsubscribeForeground();
     };
   }, [userId, userRole]);
+
+  const handleAcceptCall = () => {
+    if (!incomingCallData) return;
+    const data = incomingCallData;
+    setIncomingCallData(null);
+
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('CallScreen', {
+        socket,
+        bookingId: data.bookingId,
+        partnerId: data.callerId,
+        partnerName: data.callerName || 'Legal Partner',
+        partnerPic: data.callerPic || '',
+        isCaller: false,
+        isVideo: data.isVideo,
+        incomingSignal: data.signal,
+        callerSocketId: data.from
+      });
+    }
+  };
+
+  const handleDeclineCall = () => {
+    if (!incomingCallData) return;
+    socket.emit('callLog', { bookingId: incomingCallData.bookingId, message: 'Call declined' });
+    setIncomingCallData(null);
+  };
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
@@ -403,6 +420,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       handleNotificationRedirect
     }}>
       {children}
+
+      {/* Full-Screen Interactive Incoming Call Modal Overlay */}
+      {incomingCallData && (
+        <IncomingCallModal
+          visible={!!incomingCallData}
+          callerName={incomingCallData.callerName || 'Legal Partner'}
+          callerPic={incomingCallData.callerPic}
+          isVideo={incomingCallData.isVideo}
+          onAccept={handleAcceptCall}
+          onDecline={handleDeclineCall}
+        />
+      )}
 
       {/* Floating Animated In-App Notification Toast */}
       {currentToast && (
