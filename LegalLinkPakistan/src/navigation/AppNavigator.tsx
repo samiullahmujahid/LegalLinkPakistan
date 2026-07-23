@@ -119,14 +119,53 @@ export type RootStackParamList = {
 // ==========================================
 // STACK NAVIGATOR CONFIG & COMPONENT
 // ==========================================
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, ActivityIndicator } from 'react-native';
+
 const Stack = createStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [initialRoute, setInitialRoute] = React.useState<any>('RoleSelection');
+
+  React.useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const token = await AsyncStorage.getItem('userToken');
+        const userStr = await AsyncStorage.getItem('user');
+        if (token && userStr) {
+          const user = JSON.parse(userStr);
+          const role = user.role;
+          if (role === 'Client') {
+            setInitialRoute('ClientDashboard');
+          } else if (role === 'Lawyer') {
+            setInitialRoute('LawyerDashboard');
+          } else if (role === 'Admin') {
+            setInitialRoute('AdminDashboard');
+          }
+        }
+      } catch (e) {
+        console.error('Session check error:', e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    checkSession();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#001a4d', justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#ffffff" />
+      </View>
+    );
+  }
+
   return (
     <NotificationProvider>
       <NavigationContainer ref={navigationRef}>
       <Stack.Navigator
-        initialRouteName="RoleSelection"
+        initialRouteName={initialRoute}
         screenOptions={{ headerShown: false }}
       >
         {/* AUTH */}
