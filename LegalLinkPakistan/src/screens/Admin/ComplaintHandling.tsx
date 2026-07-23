@@ -5,7 +5,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import StatusCard from '../../components/Common/StatusCard/StatusCard';
-import Header from '../../components/Common/Header';
+import Header from '../../components/Common/Header/Header';
 
 const ComplaintHandling = ({ navigation }: any) => {
     const [activeTab, setActiveTab] = useState('Client'); // 'Client' or 'Lawyer'

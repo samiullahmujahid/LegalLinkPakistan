@@ -6,8 +6,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LawyerStyles as ls } from '../../theme/styles/LawyerStyles';
-import Header from '../../components/Common/Header';
-import { MyButton } from '../../components/Common/MyButton';
+import Header from '../../components/Common/Header/Header';
+import { MyButton } from '../../components/Common/MyButton/MyButton';
 
 const LawyerStatus = ({ navigation, route }: any) => {
   const [status, setStatus] = useState('Pending Approval');

@@ -13,9 +13,9 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { LawyerStyles as s } from '../../../theme/styles/LawyerStyles';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 import { COLORS } from '../../../theme/theme';
-import { MyButton } from '../../../components/Common/MyButton';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
 
 const BASE_URL = 'https://mug-work-public.ngrok-free.dev';
 

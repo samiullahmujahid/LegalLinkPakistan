@@ -9,7 +9,7 @@ import axios from 'axios';
 import { LawyerStyles as styles } from '../../../theme/styles/LawyerStyles';
 import Bottombar from '../../../components/Common/BottomBar/Bottombar';
 import StatusCard from '../../../components/Common/StatusCard/StatusCard';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 
 const ClientRequests = ({ navigation }: any) => {
   const insets = useSafeAreaInsets();

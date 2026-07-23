@@ -4,8 +4,8 @@ import {
   Alert, ActivityIndicator, StyleSheet, TextInput, ScrollView, Image, Platform, KeyboardAvoidingView
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Header from '../../../components/Common/Header';
-import { MyButton } from '../../../components/Common/MyButton';
+import Header from '../../../components/Common/Header/Header';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { launchImageLibrary } from 'react-native-image-picker';
 

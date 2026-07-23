@@ -22,10 +22,10 @@ import axios from 'axios';
 // Styles & Subcomponents
 import { LawyerStyles as ls } from '../../../theme/styles/LawyerStyles';
 import { globalStyles } from '../../../theme/globalStyles';
-import { LocationSelector } from '../../../components/Common/LocationSelector';
-import { MyInput } from '../../../components/Common/MyInput';
-import { MyButton } from '../../../components/Common/MyButton';
-import Header from '../../../components/Common/Header';
+import { LocationSelector } from '../../../components/Common/LocationSelector/LocationSelector';
+import { MyInput } from '../../../components/Common/MyInput/MyInput';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
+import Header from '../../../components/Common/Header/Header';
 
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
 

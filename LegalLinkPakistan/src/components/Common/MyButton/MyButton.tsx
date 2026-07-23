@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleProp, ViewStyle, TextStyle, StyleSheet } from 'react-native';
-import { COLORS } from '../../theme/theme';
+import { TouchableOpacity, Text, StyleProp, ViewStyle, TextStyle } from 'react-native';
+import { COLORS } from '../../../theme/theme';
+import { styles } from './MyButton.styles';
 
 interface MyButtonProps {
   title: string;
@@ -33,18 +34,4 @@ export const MyButton: React.FC<MyButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
-  defaultButton: {
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 25,
-    width: '100%',
-    marginTop: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  }
-});
+export default MyButton;

@@ -12,7 +12,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 // --- Imports from Theme & Styles ---
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
 import { COLORS } from '../../theme/theme';
-import { MyButton } from '../../components/Common/MyButton';
+import { MyButton } from '../../components/Common/MyButton/MyButton';
 
 type AdminVerifyNavigationProp = StackNavigationProp<RootStackParamList, 'AdminVerify'>;
 type AdminVerifyRouteProp = RouteProp<RootStackParamList, 'AdminVerify'>;

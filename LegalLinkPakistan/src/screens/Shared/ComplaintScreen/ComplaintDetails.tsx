@@ -4,8 +4,8 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { CommonActions } from '@react-navigation/native';
-import Header from '../../../components/Common/Header';
-import { MyButton } from '../../../components/Common/MyButton';
+import Header from '../../../components/Common/Header/Header';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
 
 const ComplaintDetails = ({ route, navigation }: any) => {
   const { id } = route.params;

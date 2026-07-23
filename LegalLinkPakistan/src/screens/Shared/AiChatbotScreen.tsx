@@ -23,7 +23,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { COLORS } from '../../theme/theme';
-import Header from '../../components/Common/Header';
+import Header from '../../components/Common/Header/Header';
 
 const { width } = Dimensions.get('window');
 const BASE_URL = "https://mug-work-public.ngrok-free.dev";

@@ -8,8 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'; // 👈 AD
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
 import Card from '../../components/Common/Card/Card';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
-import NotificationIcon from '../../components/Common/NotificationIcon';
-import Header from '../../components/Common/Header';
+import NotificationIcon from '../../components/Common/NotificationIcon/NotificationIcon';
+import Header from '../../components/Common/Header/Header';
 
 const AdminDashboard = ({ navigation }: any) => {
   const [stats, setStats] = useState({ totalLawyers: 0, totalClients: 0 });

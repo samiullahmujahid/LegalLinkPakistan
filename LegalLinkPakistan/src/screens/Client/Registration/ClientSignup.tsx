@@ -3,11 +3,11 @@ import {
   View, Text, Image, ScrollView, Alert, KeyboardAvoidingView, Platform, SafeAreaView
 } from 'react-native';
 import axios from 'axios';
-import { LocationSelector } from '../../../components/Common/LocationSelector';
-import { MyInput } from '../../../components/Common/MyInput';
-import { MyButton } from '../../../components/Common/MyButton';
+import { LocationSelector } from '../../../components/Common/LocationSelector/LocationSelector';
+import { MyInput } from '../../../components/Common/MyInput/MyInput';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
 import { globalStyles } from '../../../theme/globalStyles';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 
 const ClientSignup: React.FC<{ navigation: any }> = ({ navigation }) => {
   const [formData, setFormData] = useState({

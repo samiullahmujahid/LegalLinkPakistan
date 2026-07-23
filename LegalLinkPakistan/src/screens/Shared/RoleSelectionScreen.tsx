@@ -3,7 +3,7 @@ import { View, Text, Image, SafeAreaView } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../../navigation/AppNavigator';
 import { globalStyles } from '../../theme/globalStyles';
-import { MyButton } from '../../components/Common/MyButton';
+import { MyButton } from '../../components/Common/MyButton/MyButton';
 
 type RoleNavProp = StackNavigationProp<RootStackParamList, 'RoleSelection'>;
 

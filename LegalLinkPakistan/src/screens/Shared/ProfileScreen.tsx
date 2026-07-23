@@ -10,11 +10,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { launchImageLibrary } from 'react-native-image-picker';
-import Header from '../../components/Common/Header';
+import Header from '../../components/Common/Header/Header';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
-import { LocationSelector } from '../../components/Common/LocationSelector';
+import { LocationSelector } from '../../components/Common/LocationSelector/LocationSelector';
 import { COLORS } from '../../theme/theme';
-import { MyButton } from '../../components/Common/MyButton';
+import { MyButton } from '../../components/Common/MyButton/MyButton';
 
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
 

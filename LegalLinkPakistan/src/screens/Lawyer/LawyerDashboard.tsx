@@ -4,8 +4,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { LawyerStyles as s } from '../../theme/styles/LawyerStyles';
 import Card from '../../components/Common/Card/Card';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';
-import NotificationIcon from '../../components/Common/NotificationIcon';
-import Header from '../../components/Common/Header';
+import NotificationIcon from '../../components/Common/NotificationIcon/NotificationIcon';
+import Header from '../../components/Common/Header/Header';
 
 interface LawyerMenuItem {
   title: string;

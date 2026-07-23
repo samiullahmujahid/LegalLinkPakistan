@@ -7,8 +7,8 @@ import {
 } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MyInput } from '../../components/Common/MyInput';
-import { MyButton } from '../../components/Common/MyButton';
+import { MyInput } from '../../components/Common/MyInput/MyInput';
+import { MyButton } from '../../components/Common/MyButton/MyButton';
 import { globalStyles } from '../../theme/globalStyles';
 
 // ==========================================

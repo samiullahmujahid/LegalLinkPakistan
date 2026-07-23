@@ -7,7 +7,7 @@ import { NotificationService } from '../../utils/notificationService';
 import { navigationRef } from '../../navigation/AppNavigator';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { COLORS } from '../../theme/theme';
-import IncomingCallModal from './IncomingCallModal';
+import IncomingCallModal from './IncomingCallModal/IncomingCallModal';
 
 const { width } = Dimensions.get('window');
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";

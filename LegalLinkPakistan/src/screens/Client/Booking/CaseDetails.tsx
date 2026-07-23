@@ -4,13 +4,13 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 import { Dropdown } from 'react-native-element-dropdown';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ClientStyles as styles } from '../../../theme/styles/ClientStyles';
 import ProfileCard from '../../../components/Common/ProfileCard/ProfileCard';
-import { MyButton } from '../../../components/Common/MyButton';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
 
 const courtLevels = [
   { label: 'Supreme Court', value: 'Supreme Court' },

@@ -6,9 +6,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 import { COLORS } from '../../../theme/theme';
-import StarRating from '../../../components/Common/StarRating';
+import StarRating from '../../../components/Common/StarRating/StarRating';
 
 const API_BASE = "https://mug-work-public.ngrok-free.dev/api";
 

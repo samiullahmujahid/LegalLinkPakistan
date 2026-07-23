@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import axios from 'axios'; 
 import { LawyerStyles as ls } from '../../theme/styles/LawyerStyles';
-import Header from '../../components/Common/Header';
+import Header from '../../components/Common/Header/Header';
 
 const LawyerPaymentDetail = ({ navigation, route }: any) => {
   const { allData } = route.params || {};

@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { useNotifications } from './NotificationProvider';
-import { COLORS } from '../../theme/theme';
+import { useNotifications } from '../NotificationProvider';
+import { COLORS } from '../../../theme/theme';
+import { styles } from './NotificationIcon.styles';
 
 interface NotificationIconProps {
   color?: string;
@@ -34,34 +35,5 @@ export const NotificationIcon: React.FC<NotificationIconProps> = ({
     </TouchableOpacity>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 4,
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badge: {
-    position: 'absolute',
-    top: 1,
-    right: 1,
-    backgroundColor: COLORS.danger,
-    borderRadius: 8.5,
-    minWidth: 17,
-    height: 17,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 2,
-    borderWidth: 1.5,
-  },
-  badgeText: {
-    color: '#fff',
-    fontSize: 8,
-    fontWeight: '800',
-    textAlign: 'center',
-    marginTop: -1,
-  }
-});
 
 export default NotificationIcon;

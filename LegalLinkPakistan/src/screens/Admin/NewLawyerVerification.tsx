@@ -8,8 +8,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // --- Modular Import ---
 import { AdminStyles as s } from '../../theme/styles/AdminStyles';
-import Header from '../../components/Common/Header';
-import { MyButton } from '../../components/Common/MyButton';
+import Header from '../../components/Common/Header/Header';
+import { MyButton } from '../../components/Common/MyButton/MyButton';
 
 const NewLawyerVerification = ({ navigation }: any) => {
   const [lawyers, setLawyers] = useState([]);

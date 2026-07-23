@@ -7,9 +7,9 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useStripe } from '@stripe/stripe-react-native';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 import { COLORS } from '../../../theme/theme';
-import { MyButton } from '../../../components/Common/MyButton';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
 
 // Robust helper to parse scheduled Date & Time formats into a JS Date object
 const parseScheduledDateTime = (dateStr: string, timeStr: string): Date | null => {

@@ -4,8 +4,8 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import RatingAlert from '../../../components/Common/Alert/Alert';
-import Header from '../../../components/Common/Header';
-import { MyButton } from '../../../components/Common/MyButton';
+import Header from '../../../components/Common/Header/Header';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
 import { COLORS } from '../../../theme/theme';
 
 const { width } = Dimensions.get('window');

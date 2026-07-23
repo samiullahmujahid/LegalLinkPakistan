@@ -7,7 +7,7 @@ import {
 } from 'react-native';
 import Swipeable from 'react-native-gesture-handler/Swipeable';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Header from '../../components/Common/Header';
+import Header from '../../components/Common/Header/Header';
 import { useNotifications } from '../../components/Common/NotificationProvider';
 import { COLORS } from '../../theme/theme';
 

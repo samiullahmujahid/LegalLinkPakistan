@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, FlatList, SafeAreaView, StyleSheet, Activ
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 import { COLORS } from '../../../theme/theme';
 
 const ComplaintStatus = ({ navigation }: any) => {

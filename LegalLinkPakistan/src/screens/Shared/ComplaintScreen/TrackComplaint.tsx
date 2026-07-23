@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 
 const TrackComplaint = ({ navigation, route }: any) => {
   // Assume status comes from navigation params

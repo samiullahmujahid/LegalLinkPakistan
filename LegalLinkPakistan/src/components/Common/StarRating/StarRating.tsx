@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { styles } from './StarRating.styles';
 
 interface StarRatingProps {
   rating: number;
@@ -37,12 +38,5 @@ export const StarRating: React.FC<StarRatingProps> = ({
 
   return <View style={styles.starRow}>{stars}</View>;
 };
-
-const styles = StyleSheet.create({
-  starRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-});
 
 export default StarRating;

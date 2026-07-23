@@ -14,8 +14,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MyButton } from '../../../components/Common/MyButton';
-import Header from '../../../components/Common/Header';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
+import Header from '../../../components/Common/Header/Header';
 
 const Wallet = () => {
   const [data, setData] = useState({ 

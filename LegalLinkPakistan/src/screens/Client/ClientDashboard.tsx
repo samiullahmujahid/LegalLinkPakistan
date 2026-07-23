@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, Alert } from 'react-native';
-import NotificationIcon from '../../components/Common/NotificationIcon';
-import Header from '../../components/Common/Header';
+import NotificationIcon from '../../components/Common/NotificationIcon/NotificationIcon';
+import Header from '../../components/Common/Header/Header';
 import { ClientStyles as s } from '../../theme/styles/ClientStyles';
 import Card from '../../components/Common/Card/Card';
 import CustomBottomNav from '../../components/Common/BottomBar/Bottombar';

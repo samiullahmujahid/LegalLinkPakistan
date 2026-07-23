@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, Alert, StyleSheet, TouchableOpacity, ActivityIndicator, SafeAreaView } from 'react-native';
 import { useStripe } from '@stripe/stripe-react-native';
 import axios from 'axios';
-import { MyButton } from '../../../components/Common/MyButton';
-import Header from '../../../components/Common/Header';
+import { MyButton } from '../../../components/Common/MyButton/MyButton';
+import Header from '../../../components/Common/Header/Header';
 
 const Payment = ({ route, navigation }: any) => {
   const { bookingId, amount } = route.params;

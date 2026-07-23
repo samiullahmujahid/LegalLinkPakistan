@@ -8,7 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { ClientStyles as styles } from '../../../theme/styles/ClientStyles';
-import Header from '../../../components/Common/Header';
+import Header from '../../../components/Common/Header/Header';
 import StatusCard from '../../../components/Common/StatusCard/StatusCard';
 
 const TrackAppointment = ({ navigation, route }: any) => {

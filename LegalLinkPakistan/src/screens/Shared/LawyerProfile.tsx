@@ -3,12 +3,12 @@ import {
   View, Text, SafeAreaView, ScrollView, ActivityIndicator, TouchableOpacity, Image, StyleSheet, Platform 
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import Header from '../../components/Common/Header';
+import Header from '../../components/Common/Header/Header';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Bottombar from '../../components/Common/BottomBar/Bottombar';
-import { MyButton } from '../../components/Common/MyButton';
-import StarRating from '../../components/Common/StarRating';
+import { MyButton } from '../../components/Common/MyButton/MyButton';
+import StarRating from '../../components/Common/StarRating/StarRating';
 
 const LawyerProfile = ({ route, navigation }: any) => {
   const { lawyerId, viewOnly } = route.params || {};
